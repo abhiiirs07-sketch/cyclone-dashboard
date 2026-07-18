@@ -81,7 +81,7 @@ def ensure_initialized() -> None:
                 refresh_token=refresh_token,
                 token_uri="https://oauth2.googleapis.com/token",
                 client_id="517222506229-vsmmajv00ul0bs7p89v5m89qs8eb9359.apps.googleusercontent.com",
-                client_secret="RUP0RZ6e0pPhDzsqOPC16lAk",
+                client_secret="RUP0RZ6e0pPhDzsqIJ7KlNd1",
                 scopes=[
                     "https://www.googleapis.com/auth/earthengine",
                     "https://www.googleapis.com/auth/cloud-platform",
