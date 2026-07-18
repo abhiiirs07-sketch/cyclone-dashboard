@@ -69,6 +69,35 @@ def ensure_initialized() -> None:
                 f"Failed to initialize Earth Engine with service account: {e}"
             ) from e
 
+    # Try OAuth refresh token if provided
+    refresh_token = os.environ.get("EE_REFRESH_TOKEN")
+    if refresh_token:
+        try:
+            from google.oauth2.credentials import Credentials
+            from google.auth.transport.requests import Request
+
+            creds = Credentials(
+                token=None,
+                refresh_token=refresh_token,
+                token_uri="https://oauth2.googleapis.com/token",
+                client_id="517222506229-vsmmajv00ul0bs7p89v5m89qs8eb9359.apps.googleusercontent.com",
+                client_secret="RUP0RZ6e0pPhDzsqOPC16lAk",
+                scopes=[
+                    "https://www.googleapis.com/auth/earthengine",
+                    "https://www.googleapis.com/auth/cloud-platform",
+                    "https://www.googleapis.com/auth/drive",
+                    "https://www.googleapis.com/auth/devstorage.full_control",
+                ],
+            )
+            creds.refresh(Request())
+            ee.Initialize(credentials=creds, project=project)
+            _initialized = True
+            return
+        except Exception as e:
+            raise EENotConfiguredError(
+                f"Failed to initialize Earth Engine with refresh token: {e}"
+            ) from e
+
     # Otherwise, fall back to user credentials (OAuth)
     try:
         ee.Initialize(project=project)

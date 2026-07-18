@@ -3,3 +3,6 @@ uvicorn[standard]>=0.32
 earthengine-api>=1.1
 python-dotenv>=1.0
 pydantic>=2.9
+google-auth>=2.0
+google-auth-httplib2>=0.2
+requests>=2.31
