@@ -1,0 +1,136 @@
+{
+  "terrain": {
+    "elev_min": -30,
+    "elev_max": 1488,
+    "elev_mean": 238.5,
+    "lowland_km2": 10434.9
+  },
+  "hazard": {
+    "mean": 0.2821,
+    "max": 0.9633,
+    "std_dev": 0.2353
+  },
+  "surge": {
+    "mean": 0.2267,
+    "max": 0.9833
+  },
+  "districtHazard": [
+    {
+      "name": "Bhadrak",
+      "index": 0.755,
+      "level": "High"
+    },
+    {
+      "name": "Kendrapara",
+      "index": 0.752,
+      "level": "High"
+    },
+    {
+      "name": "Jagatsinghpur",
+      "index": 0.719,
+      "level": "High"
+    },
+    {
+      "name": "Baleshwar",
+      "index": 0.629,
+      "level": "High"
+    },
+    {
+      "name": "Jajpur",
+      "index": 0.607,
+      "level": "High"
+    },
+    {
+      "name": "Puri",
+      "index": 0.509,
+      "level": "Moderate"
+    },
+    {
+      "name": "Cuttack",
+      "index": 0.453,
+      "level": "Moderate"
+    },
+    {
+      "name": "Khordha",
+      "index": 0.375,
+      "level": "Low"
+    },
+    {
+      "name": "Pashchim Singhbhum",
+      "index": 0.301,
+      "level": "Low"
+    },
+    {
+      "name": "Mayurbhanj",
+      "index": 0.285,
+      "level": "Low"
+    },
+    {
+      "name": "Dhenkanal",
+      "index": 0.283,
+      "level": "Low"
+    },
+    {
+      "name": "Keonjhar",
+      "index": 0.281,
+      "level": "Low"
+    },
+    {
+      "name": "Srikakulam",
+      "index": 0.235,
+      "level": "Low"
+    },
+    {
+      "name": "Ganjam",
+      "index": 0.234,
+      "level": "Low"
+    },
+    {
+      "name": "Nayagarh",
+      "index": 0.196,
+      "level": "Very Low"
+    },
+    {
+      "name": "Sonepur",
+      "index": 0.187,
+      "level": "Very Low"
+    },
+    {
+      "name": "Angul",
+      "index": 0.164,
+      "level": "Very Low"
+    },
+    {
+      "name": "Boudh",
+      "index": 0.138,
+      "level": "Very Low"
+    },
+    {
+      "name": "Sundargarh",
+      "index": 0.137,
+      "level": "Very Low"
+    },
+    {
+      "name": "Deogarh",
+      "index": 0.125,
+      "level": "Very Low"
+    }
+  ],
+  "stateHazard": [
+    {
+      "name": "Jharkhand",
+      "mean": 0.306,
+      "max": 0.422
+    },
+    {
+      "name": "Andhra Pradesh",
+      "mean": 0.228,
+      "max": 0.502
+    },
+    {
+      "name": "Orissa",
+      "mean": 0.291,
+      "max": 0.945
+    }
+  ]
+}

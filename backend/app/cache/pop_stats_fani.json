@@ -1,0 +1,116 @@
+{
+  "summary": {
+    "total_pop": 27291030,
+    "flooded_pop": 7755370,
+    "high_haz_pop": 0,
+    "veg_dmg_pop": 296769,
+    "pct_flooded": 28.4,
+    "pct_high_haz": 0.0,
+    "max_density_km2": 23670.0,
+    "mean_vuln": 48.2
+  },
+  "districts_total": [
+    {
+      "name": "Ganjam",
+      "pop": 3242790
+    },
+    {
+      "name": "Cuttack",
+      "pop": 2796823
+    },
+    {
+      "name": "Khordha",
+      "pop": 1814728
+    },
+    {
+      "name": "Jajpur",
+      "pop": 1743251
+    },
+    {
+      "name": "Keonjhar",
+      "pop": 1624902
+    },
+    {
+      "name": "Puri",
+      "pop": 1544950
+    },
+    {
+      "name": "Baleshwar",
+      "pop": 1543366
+    },
+    {
+      "name": "Kendrapara",
+      "pop": 1482536
+    },
+    {
+      "name": "Bhadrak",
+      "pop": 1391365
+    },
+    {
+      "name": "Mayurbhanj",
+      "pop": 1275867
+    },
+    {
+      "name": "Dhenkanal",
+      "pop": 1258808
+    },
+    {
+      "name": "Angul",
+      "pop": 1173316
+    },
+    {
+      "name": "Srikakulam",
+      "pop": 1164971
+    },
+    {
+      "name": "Jagatsinghpur",
+      "pop": 1038833
+    },
+    {
+      "name": "Nayagarh",
+      "pop": 867047
+    }
+  ],
+  "districts_flooded": [
+    {
+      "name": "Kendrapara",
+      "pop": 1389568
+    },
+    {
+      "name": "Bhadrak",
+      "pop": 1312223
+    },
+    {
+      "name": "Jajpur",
+      "pop": 1271542
+    },
+    {
+      "name": "Baleshwar",
+      "pop": 1111271
+    },
+    {
+      "name": "Jagatsinghpur",
+      "pop": 873597
+    },
+    {
+      "name": "Cuttack",
+      "pop": 632729
+    },
+    {
+      "name": "Puri",
+      "pop": 465819
+    },
+    {
+      "name": "Mayurbhanj",
+      "pop": 402594
+    },
+    {
+      "name": "Keonjhar",
+      "pop": 196233
+    },
+    {
+      "name": "Khordha",
+      "pop": 107338
+    }
+  ]
+}

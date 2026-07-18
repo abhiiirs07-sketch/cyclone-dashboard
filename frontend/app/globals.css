@@ -1,0 +1,47 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+  Tokens below default to the dark theme (the spec's primary requirement);
+  html:not(.dark) overrides to a light variant for the theme switch.
+  --accent-cyan is #22d3ee, a legibility-adjusted version of the exact
+  00FFFF used for "Study Buffer" in your script's Map.addLayer calls.
+*/
+:root {
+  --surface-0: #0a0e14;
+  --surface-1: #10151d;
+  --surface-2: #171d27;
+  --border-subtle: #232b38;
+  --text-primary: #e7ecf3;
+  --text-secondary: #a7b2c2;
+  --text-tertiary: #64707f;
+  --accent-cyan: #22d3ee;
+}
+
+html:not(.dark) {
+  --surface-0: #f4f6f8;
+  --surface-1: #ffffff;
+  --surface-2: #eef1f4;
+  --border-subtle: #dde3ea;
+  --text-primary: #10151d;
+  --text-secondary: #445064;
+  --text-tertiary: #7c8797;
+  --accent-cyan: #0891b2;
+}
+
+.dark {
+  color-scheme: dark;
+}
+
+body {
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+.maplibregl-ctrl-attrib {
+  font-size: 10px;
+}
+
+.maplibregl-ctrl-attrib a {
+  color: var(--text-secondary);
+}

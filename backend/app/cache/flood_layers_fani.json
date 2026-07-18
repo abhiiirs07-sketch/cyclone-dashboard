@@ -1,0 +1,19 @@
+{
+  "layers": {
+    "sarPre": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/fe166d0f7e3fb5b6eba1b3aa5eb33917-68855338d3755dff43165bcde9f5a666/tiles/{z}/{x}/{y}"
+    },
+    "sarPost": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/5581287853899eede77c4182a9d167b3-ab47383b94ac51b4511b17adb7c4dc14/tiles/{z}/{x}/{y}"
+    },
+    "sarDiff": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/695d9fc06f7482e2d37b6079d9d76e76-7e2f1169b712f73ab43906dba2c9f1c2/tiles/{z}/{x}/{y}"
+    },
+    "floodExtent": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/2a40c808edef4e6f2d2d9c1545904ace-5eb375e4a412a3d1f8d3638b6ef563b0/tiles/{z}/{x}/{y}"
+    },
+    "floodDepth": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/58bef3f58ec64b154a535b496142e741-a70aaae0034836bf517c93c0d38b4ac2/tiles/{z}/{x}/{y}"
+    }
+  }
+}

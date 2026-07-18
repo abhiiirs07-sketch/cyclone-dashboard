@@ -1,0 +1,71 @@
+{
+  "meta": {
+    "cyclone_name": "Fani",
+    "landfall_place": "Puri",
+    "landfall_date": "N/A",
+    "category": "N/A",
+    "peak_wind_kmh": 0,
+    "generated_at": "2026-07-18T11:36:29.443282Z"
+  },
+  "rainfall": {
+    "mean_mm": 54.0,
+    "max_mm": 162.0
+  },
+  "flood": {
+    "flooded_area_km2": 37.2
+  },
+  "hazard": {
+    "mean_index": 0,
+    "max_index": 0
+  },
+  "vegetation": {
+    "damaged_area_km2": 3207.7
+  },
+  "population": {
+    "total": 27291030,
+    "flooded": 4849,
+    "pct_flooded": 0.0
+  },
+  "top_hazard_districts": [
+    {
+      "name": "Khordha",
+      "hazard_mean": 0.198
+    },
+    {
+      "name": "Cuttack",
+      "hazard_mean": 0.197
+    },
+    {
+      "name": "Jajpur",
+      "hazard_mean": 0.196
+    },
+    {
+      "name": "Baleshwar",
+      "hazard_mean": 0.194
+    },
+    {
+      "name": "Bhadrak",
+      "hazard_mean": 0.193
+    },
+    {
+      "name": "Kendrapara",
+      "hazard_mean": 0.193
+    },
+    {
+      "name": "Jagatsinghpur",
+      "hazard_mean": 0.19
+    },
+    {
+      "name": "Ganjam",
+      "hazard_mean": 0.186
+    },
+    {
+      "name": "Dhenkanal",
+      "hazard_mean": 0.182
+    },
+    {
+      "name": "Srikakulam",
+      "hazard_mean": 0.182
+    }
+  ]
+}

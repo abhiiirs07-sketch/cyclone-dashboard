@@ -1,0 +1,160 @@
+{
+  "track": {
+    "category": "Cat 5",
+    "duration_hr": 204,
+    "end_time": "2019-05-04T06:00:00Z",
+    "length_km": 2921.9790840509345,
+    "max_wind_kt": 150,
+    "min_pres_hpa": 900,
+    "start_time": "2019-04-25T18:00:00Z"
+  },
+  "corridors": {
+    "flood_250km_km2": 287701.8560604676,
+    "multihazard_100km_km2": 97516.029755357,
+    "surge_50km_km2": 51019.178449096784
+  },
+  "districtRainfall": [
+    {
+      "name": "Sylhet",
+      "mean": 224.8,
+      "max": 386.9
+    },
+    {
+      "name": "Sunamganj",
+      "mean": 276.8,
+      "max": 338.6
+    },
+    {
+      "name": "Netrakona",
+      "mean": 248.9,
+      "max": 338.1
+    },
+    {
+      "name": "West Khasi Hills",
+      "mean": 167.3,
+      "max": 327.7
+    },
+    {
+      "name": "East Khasi Hills",
+      "mean": 162.0,
+      "max": 324.4
+    },
+    {
+      "name": "South Garo Hills",
+      "mean": 250.8,
+      "max": 322.6
+    },
+    {
+      "name": "Mymensingh",
+      "mean": 159.5,
+      "max": 285.6
+    },
+    {
+      "name": "West Garo Hills",
+      "mean": 178.6,
+      "max": 247.5
+    },
+    {
+      "name": "East Garo Hills",
+      "mean": 180.4,
+      "max": 241.9
+    },
+    {
+      "name": "Maulvibazar",
+      "mean": 141.9,
+      "max": 211.1
+    },
+    {
+      "name": "Sherpur",
+      "mean": 163.0,
+      "max": 209.8
+    },
+    {
+      "name": "Habiganj",
+      "mean": 160.5,
+      "max": 208.6
+    },
+    {
+      "name": "Goalpara",
+      "mean": 146.8,
+      "max": 201.7
+    },
+    {
+      "name": "Dhuburi",
+      "mean": 89.6,
+      "max": 193.4
+    },
+    {
+      "name": "Kamrup",
+      "mean": 134.3,
+      "max": 187.6
+    },
+    {
+      "name": "Jamalpur",
+      "mean": 122.7,
+      "max": 174.6
+    },
+    {
+      "name": "Comilla",
+      "mean": 132.3,
+      "max": 174.1
+    },
+    {
+      "name": "Barpeta",
+      "mean": 120.0,
+      "max": 172.3
+    },
+    {
+      "name": "North Tripura",
+      "mean": 112.7,
+      "max": 166.3
+    },
+    {
+      "name": "Brahamanbaria",
+      "mean": 133.1,
+      "max": 164.9
+    }
+  ],
+  "stateRainfall": [
+    {
+      "name": "Bihar",
+      "mean": 16.6,
+      "max": 70.1
+    },
+    {
+      "name": "Jharkhand",
+      "mean": 24.8,
+      "max": 117.4
+    },
+    {
+      "name": "Andhra Pradesh",
+      "mean": 5.1,
+      "max": 41.9
+    },
+    {
+      "name": "Assam",
+      "mean": 117.4,
+      "max": 319.5
+    },
+    {
+      "name": "Meghalaya",
+      "mean": 165.8,
+      "max": 327.7
+    },
+    {
+      "name": "Orissa",
+      "mean": 38.2,
+      "max": 162.0
+    },
+    {
+      "name": "Tripura",
+      "mean": 103.5,
+      "max": 166.3
+    },
+    {
+      "name": "West Bengal",
+      "mean": 58.1,
+      "max": 140.5
+    }
+  ]
+}

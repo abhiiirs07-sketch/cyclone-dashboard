@@ -1,0 +1,143 @@
+{
+  "index": {
+    "mean": 0.177,
+    "min": 0.026,
+    "max": 0.743,
+    "stddev": 0.102
+  },
+  "class_areas": {
+    "Very Low": 75062.0,
+    "Low": 5561.9,
+    "Moderate": 8556.8,
+    "High": 27.8
+  },
+  "district_ranking": [
+    {
+      "name": "Kendrapara",
+      "score": 0.441,
+      "level": "Moderate",
+      "rank": 1
+    },
+    {
+      "name": "Bhadrak",
+      "score": 0.437,
+      "level": "Moderate",
+      "rank": 2
+    },
+    {
+      "name": "Jagatsinghpur",
+      "score": 0.414,
+      "level": "Moderate",
+      "rank": 3
+    },
+    {
+      "name": "Baleshwar",
+      "score": 0.357,
+      "level": "Low",
+      "rank": 4
+    },
+    {
+      "name": "Jajpur",
+      "score": 0.333,
+      "level": "Low",
+      "rank": 5
+    },
+    {
+      "name": "Cuttack",
+      "score": 0.23,
+      "level": "Low",
+      "rank": 6
+    },
+    {
+      "name": "Puri",
+      "score": 0.221,
+      "level": "Low",
+      "rank": 7
+    },
+    {
+      "name": "Mayurbhanj",
+      "score": 0.188,
+      "level": "Very Low",
+      "rank": 8
+    },
+    {
+      "name": "Khordha",
+      "score": 0.177,
+      "level": "Very Low",
+      "rank": 9
+    },
+    {
+      "name": "Keonjhar",
+      "score": 0.152,
+      "level": "Very Low",
+      "rank": 10
+    },
+    {
+      "name": "Ganjam",
+      "score": 0.145,
+      "level": "Very Low",
+      "rank": 11
+    },
+    {
+      "name": "Srikakulam",
+      "score": 0.145,
+      "level": "Very Low",
+      "rank": 12
+    },
+    {
+      "name": "Bolangir",
+      "score": 0.142,
+      "level": "Very Low",
+      "rank": 13
+    },
+    {
+      "name": "Pashchim Singhbhum",
+      "score": 0.141,
+      "level": "Very Low",
+      "rank": 14
+    },
+    {
+      "name": "Nayagarh",
+      "score": 0.139,
+      "level": "Very Low",
+      "rank": 15
+    },
+    {
+      "name": "Dhenkanal",
+      "score": 0.138,
+      "level": "Very Low",
+      "rank": 16
+    },
+    {
+      "name": "Kalahandi",
+      "score": 0.137,
+      "level": "Very Low",
+      "rank": 17
+    },
+    {
+      "name": "Sonepur",
+      "score": 0.137,
+      "level": "Very Low",
+      "rank": 18
+    },
+    {
+      "name": "Boudh",
+      "score": 0.133,
+      "level": "Very Low",
+      "rank": 19
+    },
+    {
+      "name": "Sundargarh",
+      "score": 0.132,
+      "level": "Very Low",
+      "rank": 20
+    }
+  ],
+  "weights": {
+    "flood": 0.3,
+    "hazard": 0.25,
+    "veg": 0.15,
+    "lulc": 0.1,
+    "pop": 0.2
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "stats": {
+    "crop_km2": 2103.4378073816324,
+    "flood_km2": 3040.513924180859,
+    "forest_km2": 155.12248777455198,
+    "pop_exposed": 1557321.5913296104,
+    "urban_km2": 12.553651758789064,
+    "wetland_km2": 8.840148712695314
+  },
+  "districts": [
+    {
+      "name": "Kendrapara",
+      "flood_km2": 769.9,
+      "severity": "V.High"
+    },
+    {
+      "name": "Bhadrak",
+      "flood_km2": 725.3,
+      "severity": "V.High"
+    },
+    {
+      "name": "Jagatsinghpur",
+      "flood_km2": 392.2,
+      "severity": "High"
+    },
+    {
+      "name": "Jajpur",
+      "flood_km2": 361.0,
+      "severity": "High"
+    },
+    {
+      "name": "Baleshwar",
+      "flood_km2": 307.6,
+      "severity": "High"
+    },
+    {
+      "name": "Puri",
+      "flood_km2": 234.4,
+      "severity": "High"
+    },
+    {
+      "name": "Cuttack",
+      "flood_km2": 126.0,
+      "severity": "Moderate"
+    },
+    {
+      "name": "Keonjhar",
+      "flood_km2": 76.7,
+      "severity": "Moderate"
+    },
+    {
+      "name": "Mayurbhanj",
+      "flood_km2": 38.9,
+      "severity": "Low"
+    },
+    {
+      "name": "Khordha",
+      "flood_km2": 8.9,
+      "severity": "Low"
+    }
+  ]
+}
