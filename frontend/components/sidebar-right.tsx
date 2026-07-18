@@ -1,5 +1,6 @@
 'use client';
 
+import { API_BASE } from '@/lib/api';
 import type { StudyAreaResponse, MeteorologyStatsResponse, TrackStatsResponse, FloodStatsResponse, HazardStatsResponse, VegStatsResponse, LulcStatsResponse, PopStatsResponse, MHStatsResponse, ValidationStatsResponse, ReportSummaryResponse } from '@/lib/api';
 
 const MODULES = (metLive: boolean, trackLive: boolean, floodLive: boolean, hazardLive: boolean, vegLive: boolean, lulcLive: boolean, popLive: boolean, mhLive: boolean, valLive: boolean, reportLive: boolean) => [
@@ -469,7 +470,7 @@ export function SidebarRight({
             {/* CSV download */}
             {activeCyclone && (
               <a
-                href={`/api/modules/12/reports/${activeCyclone}/export`}
+                href={`${API_BASE}/api/modules/12/reports/${activeCyclone}/export`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="mt-1 flex w-full items-center justify-center gap-1.5 rounded bg-emerald-700/40 px-3 py-1.5 text-xs font-semibold text-emerald-300 ring-1 ring-emerald-700/60 transition hover:bg-emerald-700/60"

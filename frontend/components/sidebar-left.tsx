@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { API_BASE } from '@/lib/api';
 import type {
   StudyAreaLayerKey, StudyAreaResponse, CycloneInfo,
   MeteorologyLayersResponse, TrackLayersResponse,
@@ -334,19 +335,19 @@ export function SidebarLeft({
         ) : (
           <div className="space-y-1.5">
             <DownloadLink
-              href={`http://localhost:8000/api/modules/12/reports/${activeCyclone}/summary`}
+              href={`${API_BASE}/api/modules/12/reports/${activeCyclone}/summary`}
               icon="📋" label="Report JSON" desc="Summary stats for all modules"
             />
             <DownloadLink
-              href={`http://localhost:8000/api/modules/12/reports/${activeCyclone}/export`}
+              href={`${API_BASE}/api/modules/12/reports/${activeCyclone}/export`}
               icon="📊" label="District CSV" desc="Hazard · flood · population metrics"
             />
             <DownloadLink
-              href={`http://localhost:8000/api/modules/1/study-area/${activeCyclone}`}
+              href={`${API_BASE}/api/modules/1/study-area/${activeCyclone}`}
               icon="🗺" label="Study Area JSON" desc="District list + tile URLs"
             />
             <DownloadLink
-              href="http://localhost:8000/docs"
+              href={`${API_BASE}/docs`}
               icon="📖" label="API Docs (Swagger)" desc="All 24 endpoints, interactive"
               external
             />
