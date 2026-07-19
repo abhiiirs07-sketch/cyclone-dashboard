@@ -174,49 +174,49 @@ export function SidebarLeft({
             <LayerRow key={key} layerKey={key} label={label} checked={visibleLayers.has(key)} disabled={!studyArea} onToggle={onToggleLayer} />
           ))}
         </LayerGroup>
-        <LayerGroup title="Module 2 — Meteorology" accent="sky" loading={meteorologyLayersLoading} ready={!!meteorologyLayers}>
+        <LayerGroup title="Module 2 — Meteorology" accent="sky" loading={meteorologyLayersLoading} ready={!!meteorologyLayers} idle={!meteorologyLayersLoading && !meteorologyLayers}>
           {METEOROLOGY_LAYERS.map(({ key, label }) => (
-            <LayerRow key={key} layerKey={key} label={label} checked={visibleLayers.has(key)} disabled={!meteorologyLayers} onToggle={onToggleLayer} />
+            <LayerRow key={key} layerKey={key} label={label} checked={visibleLayers.has(key)} onToggle={onToggleLayer} />
           ))}
         </LayerGroup>
-        <LayerGroup title="Module 3 — Track & Corridors" accent="yellow" loading={trackLayersLoading} ready={!!trackLayers}>
+        <LayerGroup title="Module 3 — Track & Corridors" accent="yellow" loading={trackLayersLoading} ready={!!trackLayers} idle={!trackLayersLoading && !trackLayers}>
           {TRACK_LAYERS.map(({ key, label }) => (
-            <LayerRow key={key} layerKey={key} label={label} checked={visibleLayers.has(key)} disabled={!trackLayers} onToggle={onToggleLayer} />
+            <LayerRow key={key} layerKey={key} label={label} checked={visibleLayers.has(key)} onToggle={onToggleLayer} />
           ))}
         </LayerGroup>
-        <LayerGroup title="Module 5 — Flood Mapping (SAR)" accent="blue" loading={floodLayersLoading} ready={!!floodLayers}>
+        <LayerGroup title="Module 5 — Flood Mapping (SAR)" accent="blue" loading={floodLayersLoading} ready={!!floodLayers} idle={!floodLayersLoading && !floodLayers}>
           {FLOOD_LAYERS.map(({ key, label }) => (
-            <LayerRow key={key} layerKey={key} label={label} checked={visibleLayers.has(key)} disabled={!floodLayers} onToggle={onToggleLayer} />
+            <LayerRow key={key} layerKey={key} label={label} checked={visibleLayers.has(key)} onToggle={onToggleLayer} />
           ))}
         </LayerGroup>
-        <LayerGroup title="Module 6 — Hazard Index" accent="red" loading={hazardLayersLoading} ready={!!hazardLayers}>
+        <LayerGroup title="Module 6 — Hazard Index" accent="red" loading={hazardLayersLoading} ready={!!hazardLayers} idle={!hazardLayersLoading && !hazardLayers}>
           {HAZARD_LAYERS.map(({ key, label }) => (
-            <LayerRow key={key} layerKey={key} label={label} checked={visibleLayers.has(key)} disabled={!hazardLayers} onToggle={onToggleLayer} />
+            <LayerRow key={key} layerKey={key} label={label} checked={visibleLayers.has(key)} onToggle={onToggleLayer} />
           ))}
         </LayerGroup>
-        <LayerGroup title="Module 7 — Vegetation Damage" accent="green" loading={vegLayersLoading} ready={!!vegLayers}>
+        <LayerGroup title="Module 7 — Vegetation Damage" accent="green" loading={vegLayersLoading} ready={!!vegLayers} idle={!vegLayersLoading && !vegLayers}>
           {VEG_LAYERS.map(({ key, label }) => (
-            <LayerRow key={key} layerKey={key} label={label} checked={visibleLayers.has(key)} disabled={!vegLayers} onToggle={onToggleLayer} />
+            <LayerRow key={key} layerKey={key} label={label} checked={visibleLayers.has(key)} onToggle={onToggleLayer} />
           ))}
         </LayerGroup>
-        <LayerGroup title="Module 8 — LULC Impact" accent="purple" loading={lulcLayersLoading} ready={!!lulcLayers}>
+        <LayerGroup title="Module 8 — LULC Impact" accent="purple" loading={lulcLayersLoading} ready={!!lulcLayers} idle={!lulcLayersLoading && !lulcLayers}>
           {LULC_LAYERS.map(({ key, label }) => (
-            <LayerRow key={key} layerKey={key} label={label} checked={visibleLayers.has(key)} disabled={!lulcLayers} onToggle={onToggleLayer} />
+            <LayerRow key={key} layerKey={key} label={label} checked={visibleLayers.has(key)} onToggle={onToggleLayer} />
           ))}
         </LayerGroup>
-        <LayerGroup title="Module 9 — Population Exposure" accent="orange" loading={popLayersLoading} ready={!!popLayers}>
+        <LayerGroup title="Module 9 — Population Exposure" accent="orange" loading={popLayersLoading} ready={!!popLayers} idle={!popLayersLoading && !popLayers}>
           {POP_LAYERS.map(({ key, label }) => (
-            <LayerRow key={key} layerKey={key} label={label} checked={visibleLayers.has(key)} disabled={!popLayers} onToggle={onToggleLayer} />
+            <LayerRow key={key} layerKey={key} label={label} checked={visibleLayers.has(key)} onToggle={onToggleLayer} />
           ))}
         </LayerGroup>
-        <LayerGroup title="Module 10 — Multi-Hazard Summary" accent="rose" loading={mhLayersLoading} ready={!!mhLayers}>
+        <LayerGroup title="Module 10 — Multi-Hazard Summary" accent="rose" loading={mhLayersLoading} ready={!!mhLayers} idle={!mhLayersLoading && !mhLayers}>
           {MH_LAYERS.map(({ key, label }) => (
-            <LayerRow key={key} layerKey={key} label={label} checked={visibleLayers.has(key)} disabled={!mhLayers} onToggle={onToggleLayer} />
+            <LayerRow key={key} layerKey={key} label={label} checked={visibleLayers.has(key)} onToggle={onToggleLayer} />
           ))}
         </LayerGroup>
-        <LayerGroup title="Module 11 — Validation & Accuracy" accent="teal" loading={valLayersLoading} ready={!!valLayers}>
+        <LayerGroup title="Module 11 — Validation & Accuracy" accent="teal" loading={valLayersLoading} ready={!!valLayers} idle={!valLayersLoading && !valLayers}>
           {VAL_LAYERS.map(({ key, label }) => (
-            <LayerRow key={key} layerKey={key} label={label} checked={visibleLayers.has(key)} disabled={!valLayers} onToggle={onToggleLayer} />
+            <LayerRow key={key} layerKey={key} label={label} checked={visibleLayers.has(key)} onToggle={onToggleLayer} />
           ))}
         </LayerGroup>
       </Section>
@@ -431,13 +431,18 @@ function Section({ title, open, onToggle, children }: {
   );
 }
 
-function LayerGroup({ title, accent = 'cyan', loading, ready, children }: {
-  title: string; accent?: string; loading?: boolean; ready?: boolean; children: React.ReactNode;
+function LayerGroup({ title, accent = 'cyan', loading, ready, idle, children }: {
+  title: string; accent?: string; loading?: boolean; ready?: boolean; idle?: boolean; children: React.ReactNode;
 }) {
   return (
     <div className="mt-3 border-t border-[var(--border-subtle)] pt-2">
       <p className={`mb-1 text-xs uppercase tracking-wide font-semibold ${ACCENT_COLORS[accent] ?? 'text-[var(--text-secondary)]'}`}>{title}</p>
-      {loading && !ready && <p className="text-xs text-[var(--text-tertiary)] animate-pulse">⏳ Loading GEE layers…</p>}
+      {idle  && !loading && !ready && (
+        <p className="mb-1 text-[10px] text-[var(--text-tertiary)] italic">☁ Enable a layer below to load from Earth Engine</p>
+      )}
+      {loading && !ready && (
+        <p className="mb-1 text-xs text-amber-400 animate-pulse">⏳ Fetching from Earth Engine…</p>
+      )}
       {children}
     </div>
   );

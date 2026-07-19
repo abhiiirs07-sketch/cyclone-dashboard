@@ -22,17 +22,36 @@ import {
   useReportSummary,
 } from '@/lib/api';
 
+// M1 loads always — they're the base map (lightweight GEE calls)
 const DEFAULT_VISIBLE_LAYERS = ['india', 'landfall', 'affectedDistricts', 'studyArea'];
 
+// Layer keys that belong to each module — used to decide when to fetch
+const M2_KEYS  = ['peakWind','tempAnomaly','humidity','eventRainfall','rainSeverity','heavyRain','vHeavyRain'];
+const M3_KEYS  = ['cycloneTrack','corridor50km','corridor100km','corridor250km','rainfallFootprint'];
+const M5_KEYS  = ['floodExtent','floodDepth','sarPre','sarPost','sarDiff'];
+const M6_KEYS  = ['hazardIndex','hazardClass','surgeIndex','surgeClass','coastalZone','baseCoastalRisk','coastDistance','elevation','slope','hillshade','eventFactor','rainRisk','populationRisk','landCoverRisk'];
+const M7_KEYS  = ['damageClass','dNDVI','dNBR','preNDVI','postNDVI'];
+const M8_KEYS  = ['landCover','lulcImpactScore','impactType','floodedLULC','damagedLULC'];
+const M9_KEYS  = ['popDensity','popVuln','popFlooded','popHighHaz','popVegDmg','popCount'];
+const M10_KEYS = ['mhIndex','mhClass','floodRisk','vegRisk','popRisk'];
+const M11_KEYS = ['confusionMap','optFlood','mndwi','lsDNDVI','vegAgreement'];
+
+/** Returns true if any of the given keys are currently visible (module is "active") */
+function useModuleActive(visibleLayers: Set<string>, keys: string[]): boolean {
+  return keys.some(k => visibleLayers.has(k));
+}
+
 /**
- * PERFORMANCE STRATEGY:
- * - Phase 1 (0s):    Load layer URLs only (fast, ~10-30s per module)
- * - Phase 2 (15s):   Load stats after a short delay so layers appear first
- * Stats are heavy GEE operations (2-5 min). Loading them immediately on
- * page load would clog Railway and delay tile URL responses.
+ * LOADING STRATEGY — 3 phases:
+ *
+ * Phase 0 (immediate): M1 Study Area — always loads, base map.
+ * Phase 1 (on-demand): Layer URLs only when user enables that module's layers.
+ * Phase 2 (15s delay): Stats for enabled modules (heavy GEE operations).
+ *
+ * This means: opening the dashboard shows the base map instantly.
+ * Each module's tiles load only when you enable them — no wasted GEE calls.
  */
 export default function DashboardPage() {
-  // ── State ──────────────────────────────────────────────────────────────────
   const { data: cyclones } = useCyclones();
   const [selected,      setSelected]      = useState<string | null>(null);
   const [visibleLayers, setVisibleLayers] = useState<Set<string>>(new Set(DEFAULT_VISIBLE_LAYERS));
@@ -43,7 +62,7 @@ export default function DashboardPage() {
   const [animFrame,     setAnimFrame]     = useState<number | null>(null);
   const [floodProgress, setFloodProgress] = useState(0);
 
-  // Delay stats loading — start after 15s so layers appear first
+  // Stats load 15s after page opens — gives layers time to appear first
   const [statsEnabled, setStatsEnabled] = useState(false);
   useEffect(() => {
     const t = setTimeout(() => setStatsEnabled(true), 15_000);
@@ -53,30 +72,52 @@ export default function DashboardPage() {
   const activeCyclone     = selected ?? cyclones?.[0]?.id ?? null;
   const activeCycloneInfo = cyclones?.find(c => c.id === activeCyclone);
 
-  // ── Phase 1: Layer URLs (fast, fires immediately) ─────────────────────────
-  const studyArea   = useStudyArea(activeCyclone);
-  const metLayers   = useMeteorologyLayers(activeCyclone);
-  const trackLayers = useTrackLayers(activeCyclone);
-  const floodLayers = useFloodLayers(activeCyclone);
-  const hazardLayers= useHazardLayers(activeCyclone);
-  const vegLayers   = useVegLayers(activeCyclone);
-  const lulcLayers  = useLulcLayers(activeCyclone);
-  const popLayers   = usePopLayers(activeCyclone);
-  const mhLayers    = useMHLayers(activeCyclone);
-  const valLayers   = useValidationLayers(activeCyclone);
+  // ── Determine which modules are active (user has enabled at least one layer) ──
+  const m2Active  = useModuleActive(visibleLayers, M2_KEYS);
+  const m3Active  = useModuleActive(visibleLayers, M3_KEYS);
+  const m5Active  = useModuleActive(visibleLayers, M5_KEYS);
+  const m6Active  = useModuleActive(visibleLayers, M6_KEYS);
+  const m7Active  = useModuleActive(visibleLayers, M7_KEYS);
+  const m8Active  = useModuleActive(visibleLayers, M8_KEYS);
+  const m9Active  = useModuleActive(visibleLayers, M9_KEYS);
+  const m10Active = useModuleActive(visibleLayers, M10_KEYS);
+  const m11Active = useModuleActive(visibleLayers, M11_KEYS);
+
+  // ── Phase 0: M1 Study Area — always loads (base map) ─────────────────────
+  const studyArea = useStudyArea(activeCyclone);
+
+  // ── Phase 1: Layer URLs — LAZY, only when module is active ───────────────
+  const metLayers    = useMeteorologyLayers(m2Active  ? activeCyclone : null);
+  const trackLayers  = useTrackLayers(       m3Active  ? activeCyclone : null);
+  const floodLayers  = useFloodLayers(       m5Active  ? activeCyclone : null);
+  const hazardLayers = useHazardLayers(      m6Active  ? activeCyclone : null);
+  const vegLayers    = useVegLayers(         m7Active  ? activeCyclone : null);
+  const lulcLayers   = useLulcLayers(        m8Active  ? activeCyclone : null);
+  const popLayers    = usePopLayers(         m9Active  ? activeCyclone : null);
+  const mhLayers     = useMHLayers(          m10Active ? activeCyclone : null);
+  const valLayers    = useValidationLayers(  m11Active ? activeCyclone : null);
   const reportSummary = useReportSummary(activeCyclone);
 
-  // ── Phase 2: Statistics (deferred 15s — heavy GEE operations) ────────────
-  // These only fire after layers have had time to load
-  const metStats   = useMeteorologyStats(statsEnabled ? activeCyclone : null);
-  const trackStats = useTrackStats(statsEnabled ? activeCyclone : null);
-  const floodStats = useFloodStats(statsEnabled ? activeCyclone : null);
-  const hazardStats= useHazardStats(statsEnabled ? activeCyclone : null);
-  const vegStats   = useVegStats(statsEnabled ? activeCyclone : null);
-  const lulcStats  = useLulcStats(statsEnabled ? activeCyclone : null);
-  const popStats   = usePopStats(statsEnabled ? activeCyclone : null);
-  const mhStats    = useMHStats(statsEnabled ? activeCyclone : null);
-  const valStats   = useValidationStats(statsEnabled ? activeCyclone : null);
+  // ── Phase 2: Stats — deferred 15s AND only when module is active ─────────
+  const met2   = statsEnabled && m2Active;
+  const met3   = statsEnabled && m3Active;
+  const met5   = statsEnabled && m5Active;
+  const met6   = statsEnabled && m6Active;
+  const met7   = statsEnabled && m7Active;
+  const met8   = statsEnabled && m8Active;
+  const met9   = statsEnabled && m9Active;
+  const met10  = statsEnabled && m10Active;
+  const met11  = statsEnabled && m11Active;
+
+  const metStats   = useMeteorologyStats(met2  ? activeCyclone : null);
+  const trackStats = useTrackStats(      met3  ? activeCyclone : null);
+  const floodStats = useFloodStats(      met5  ? activeCyclone : null);
+  const hazardStats= useHazardStats(     met6  ? activeCyclone : null);
+  const vegStats   = useVegStats(        met7  ? activeCyclone : null);
+  const lulcStats  = useLulcStats(       met8  ? activeCyclone : null);
+  const popStats   = usePopStats(        met9  ? activeCyclone : null);
+  const mhStats    = useMHStats(         met10 ? activeCyclone : null);
+  const valStats   = useValidationStats( met11 ? activeCyclone : null);
 
   // ── Helpers ───────────────────────────────────────────────────────────────
   const toggleLayer = useCallback((key: string) => {
@@ -101,30 +142,29 @@ export default function DashboardPage() {
       />
 
       <div className="flex flex-1 overflow-hidden">
-        {/* ── LEFT SIDEBAR ── */}
         <SidebarLeft
           studyArea={studyArea.data}
           isLoading={studyArea.isLoading}
           visibleLayers={visibleLayers}
           onToggleLayer={toggleLayer}
           meteorologyLayers={metLayers.data}
-          meteorologyLayersLoading={metLayers.isLoading}
+          meteorologyLayersLoading={m2Active && metLayers.isLoading}
           trackLayers={trackLayers.data}
-          trackLayersLoading={trackLayers.isLoading}
+          trackLayersLoading={m3Active && trackLayers.isLoading}
           floodLayers={floodLayers.data}
-          floodLayersLoading={floodLayers.isLoading}
+          floodLayersLoading={m5Active && floodLayers.isLoading}
           hazardLayers={hazardLayers.data}
-          hazardLayersLoading={hazardLayers.isLoading}
+          hazardLayersLoading={m6Active && hazardLayers.isLoading}
           vegLayers={vegLayers.data}
-          vegLayersLoading={vegLayers.isLoading}
+          vegLayersLoading={m7Active && vegLayers.isLoading}
           lulcLayers={lulcLayers.data}
-          lulcLayersLoading={lulcLayers.isLoading}
+          lulcLayersLoading={m8Active && lulcLayers.isLoading}
           popLayers={popLayers.data}
-          popLayersLoading={popLayers.isLoading}
+          popLayersLoading={m9Active && popLayers.isLoading}
           mhLayers={mhLayers.data}
-          mhLayersLoading={mhLayers.isLoading}
+          mhLayersLoading={m10Active && mhLayers.isLoading}
           valLayers={valLayers.data}
-          valLayersLoading={valLayers.isLoading}
+          valLayersLoading={m11Active && valLayers.isLoading}
           reportReady={!!reportSummary.data}
           reportLoading={reportSummary.isLoading}
           activeCyclone={activeCyclone}
@@ -140,7 +180,6 @@ export default function DashboardPage() {
           onShowLegendChange={setShowLegend}
         />
 
-        {/* ── MAP ── */}
         <main className="relative flex-1">
           <MapView
             cyclone={activeCycloneInfo}
@@ -164,7 +203,6 @@ export default function DashboardPage() {
           />
         </main>
 
-        {/* ── RIGHT SIDEBAR ── */}
         <SidebarRight
           studyArea={studyArea.data}
           isLoading={studyArea.isLoading}
