@@ -35,13 +35,15 @@ app = FastAPI(
     version="0.2.0",
 )
 
-origins = os.environ.get("ALLOWED_ORIGINS", "http://localhost:3000").split(",")
+# Public dashboard — allow requests from any origin (Netlify, mobile, etc.)
+# No sensitive user data or auth here, so open CORS is safe.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
-    allow_methods=["*"],
+    allow_origins=["*"],
+    allow_methods=["GET"],
     allow_headers=["*"],
 )
+
 
 # Local caching configuration
 CACHE_DIR = Path(__file__).parent / "cache"
