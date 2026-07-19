@@ -49,7 +49,6 @@ def _build_validation(cyclone_name: str) -> dict:
     sar_flood  = (sar_diff.gt(1.25)
                   .updateMask(perm_water.Not())
                   .updateMask(slope_mask)
-                  .connectedPixelCount(8, True).gte(4)
                   .unmask(0).rename('SAR_Flood'))
 
     # ── Optical reference: Landsat-8/9 MNDWI post-event ───────────────────
