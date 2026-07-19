@@ -146,6 +146,12 @@ def _safe_run(endpoint: str, cyclone_name: str, compute_func, use_ttl: bool = Fa
 # Health & metadata
 # ---------------------------------------------------------------------------
 
+@app.get("/api/ping")
+def ping():
+    """Ultra-lightweight keep-alive endpoint — no EE call needed."""
+    return {"pong": True}
+
+
 @app.get("/api/health")
 def health():
     try:
