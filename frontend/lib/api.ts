@@ -87,13 +87,22 @@ interface HealthResponse {
 
 // ---- fetchers ----
 
-async function fetchJSON<T>(path: string): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`);
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    throw new Error(body.detail ?? `Request failed: ${res.status} ${res.statusText}`);
+async function fetchJSON<T>(path: string, timeoutMs = 300_000): Promise<T> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(`${API_BASE}${path}`, { signal: controller.signal });
+    clearTimeout(timer);
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body.detail ?? `Request failed: ${res.status} ${res.statusText}`);
+    }
+    return res.json();
+  } catch (e: unknown) {
+    clearTimeout(timer);
+    if ((e as Error).name === 'AbortError') throw new Error('Request timed out after 5 min');
+    throw e;
   }
-  return res.json();
 }
 
 const getCyclones = () => fetchJSON<CycloneInfo[]>('/api/cyclones');

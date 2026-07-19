@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Header }       from '@/components/header';
 import { SidebarLeft }  from '@/components/sidebar-left';
 import { SidebarRight } from '@/components/sidebar-right';
@@ -24,6 +24,13 @@ import {
 
 const DEFAULT_VISIBLE_LAYERS = ['india', 'landfall', 'affectedDistricts', 'studyArea'];
 
+/**
+ * PERFORMANCE STRATEGY:
+ * - Phase 1 (0s):    Load layer URLs only (fast, ~10-30s per module)
+ * - Phase 2 (15s):   Load stats after a short delay so layers appear first
+ * Stats are heavy GEE operations (2-5 min). Loading them immediately on
+ * page load would clog Railway and delay tile URL responses.
+ */
 export default function DashboardPage() {
   // ── State ──────────────────────────────────────────────────────────────────
   const { data: cyclones } = useCyclones();
@@ -36,50 +43,40 @@ export default function DashboardPage() {
   const [animFrame,     setAnimFrame]     = useState<number | null>(null);
   const [floodProgress, setFloodProgress] = useState(0);
 
+  // Delay stats loading — start after 15s so layers appear first
+  const [statsEnabled, setStatsEnabled] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setStatsEnabled(true), 15_000);
+    return () => clearTimeout(t);
+  }, []);
+
   const activeCyclone     = selected ?? cyclones?.[0]?.id ?? null;
   const activeCycloneInfo = cyclones?.find(c => c.id === activeCyclone);
 
-  // ── Module 1 — Study Area ──────────────────────────────────────────────────
-  const studyArea = useStudyArea(activeCyclone);
-
-  // ── Module 2 — Meteorology ─────────────────────────────────────────────────
-  const metLayers = useMeteorologyLayers(activeCyclone);
-  const metStats  = useMeteorologyStats(activeCyclone);
-
-  // ── Module 3 — Cyclone Track ───────────────────────────────────────────────
+  // ── Phase 1: Layer URLs (fast, fires immediately) ─────────────────────────
+  const studyArea   = useStudyArea(activeCyclone);
+  const metLayers   = useMeteorologyLayers(activeCyclone);
   const trackLayers = useTrackLayers(activeCyclone);
-  const trackStats  = useTrackStats(activeCyclone);
-
-  // ── Module 5 — Flood Mapping (SAR) ────────────────────────────────────────
   const floodLayers = useFloodLayers(activeCyclone);
-  const floodStats  = useFloodStats(activeCyclone);
-
-  // ── Module 6 — Terrain, Storm Surge & Hazard ──────────────────────────────
-  const hazardLayers = useHazardLayers(activeCyclone);
-  const hazardStats  = useHazardStats(activeCyclone);
-
-  // ── Module 7 — Vegetation Damage ──────────────────────────────────────────
-  const vegLayers = useVegLayers(activeCyclone);
-  const vegStats  = useVegStats(activeCyclone);
-
-  // ── Module 8 — LULC Impact ────────────────────────────────────────────────
-  const lulcLayers = useLulcLayers(activeCyclone);
-  const lulcStats  = useLulcStats(activeCyclone);
-
-  // ── Module 9 — Population Exposure ───────────────────────────────────────
-  const popLayers = usePopLayers(activeCyclone);
-  const popStats  = usePopStats(activeCyclone);
-
-  // ── Module 10 — Multi-Hazard Summary ─────────────────────────────────────
-  const mhLayers = useMHLayers(activeCyclone);
-  const mhStats  = useMHStats(activeCyclone);
-
-  // ── Module 11 — Validation ────────────────────────────────────────────────
-  const valLayers = useValidationLayers(activeCyclone);
-  const valStats  = useValidationStats(activeCyclone);
-
-  // ── Module 12 — Reports ───────────────────────────────────────────────────
+  const hazardLayers= useHazardLayers(activeCyclone);
+  const vegLayers   = useVegLayers(activeCyclone);
+  const lulcLayers  = useLulcLayers(activeCyclone);
+  const popLayers   = usePopLayers(activeCyclone);
+  const mhLayers    = useMHLayers(activeCyclone);
+  const valLayers   = useValidationLayers(activeCyclone);
   const reportSummary = useReportSummary(activeCyclone);
+
+  // ── Phase 2: Statistics (deferred 15s — heavy GEE operations) ────────────
+  // These only fire after layers have had time to load
+  const metStats   = useMeteorologyStats(statsEnabled ? activeCyclone : null);
+  const trackStats = useTrackStats(statsEnabled ? activeCyclone : null);
+  const floodStats = useFloodStats(statsEnabled ? activeCyclone : null);
+  const hazardStats= useHazardStats(statsEnabled ? activeCyclone : null);
+  const vegStats   = useVegStats(statsEnabled ? activeCyclone : null);
+  const lulcStats  = useLulcStats(statsEnabled ? activeCyclone : null);
+  const popStats   = usePopStats(statsEnabled ? activeCyclone : null);
+  const mhStats    = useMHStats(statsEnabled ? activeCyclone : null);
+  const valStats   = useValidationStats(statsEnabled ? activeCyclone : null);
 
   // ── Helpers ───────────────────────────────────────────────────────────────
   const toggleLayer = useCallback((key: string) => {
