@@ -6,3 +6,6 @@ __pycache__/
 .env
 secrets/
 next-env.d.ts
+
+# Local Netlify folder
+.netlify

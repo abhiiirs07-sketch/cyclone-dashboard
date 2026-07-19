@@ -1,5 +1,7 @@
 'use client';
 
+import React from 'react';
+
 import { API_BASE } from '@/lib/api';
 import type { StudyAreaResponse, MeteorologyStatsResponse, TrackStatsResponse, FloodStatsResponse, HazardStatsResponse, VegStatsResponse, LulcStatsResponse, PopStatsResponse, MHStatsResponse, ValidationStatsResponse, ReportSummaryResponse } from '@/lib/api';
 
@@ -469,14 +471,7 @@ export function SidebarRight({
             </div>
             {/* CSV download */}
             {activeCyclone && (
-              <a
-                href={`${API_BASE}/api/modules/12/reports/${activeCyclone}/export`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-1 flex w-full items-center justify-center gap-1.5 rounded bg-emerald-700/40 px-3 py-1.5 text-xs font-semibold text-emerald-300 ring-1 ring-emerald-700/60 transition hover:bg-emerald-700/60"
-              >
-                ⬇ Download District CSV
-              </a>
+              <CsvDownloadButton cyclone={activeCyclone} />
             )}
           </div>
         )}
@@ -655,3 +650,47 @@ function LulcClassTable({ classes }: { classes: Array<{ class_id: number; name: 
     </div>
   );
 }
+
+function CsvDownloadButton({ cyclone }: { cyclone: string }) {
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+
+  async function handleDownload() {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`${API_BASE}/api/modules/12/reports/${cyclone}/export`);
+      if (!res.ok) throw new Error(`Server error: ${res.status}`);
+      const data = await res.json();
+      const csvContent: string = data.csv;
+      if (!csvContent) throw new Error('No CSV data returned');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href     = url;
+      a.download = `${cyclone}_district_report.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Download failed');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="mt-1 space-y-1">
+      <button
+        onClick={handleDownload}
+        disabled={loading}
+        className="flex w-full items-center justify-center gap-1.5 rounded bg-emerald-700/40 px-3 py-1.5 text-xs font-semibold text-emerald-300 ring-1 ring-emerald-700/60 transition hover:bg-emerald-700/60 disabled:opacity-50"
+      >
+        {loading ? '⏳ Generating CSV…' : '⬇ Download District CSV'}
+      </button>
+      {error && <p className="text-[10px] text-red-400">⚠ {error}</p>}
+    </div>
+  );
+}
+

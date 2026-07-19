@@ -1,0 +1,7 @@
+[deploy]
+startCommand = "uvicorn app.main:app --host 0.0.0.0 --port $PORT --timeout-keep-alive 300 --workers 2"
+healthcheckPath = "/api/health"
+healthcheckTimeout = 300
+
+[[services]]
+name = "cyclone-backend"

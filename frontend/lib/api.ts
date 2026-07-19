@@ -390,6 +390,8 @@ export const LAYER_LEGEND: Record<string, LegendEntry> = {
   },
   elevation:         { label: 'Elevation',           palette: ['#0033CC','#00AA55','#FFFF55','#FF9900','#990000'], min: 0, max: 500, unit: 'm' },
   slope:             { label: 'Slope',               palette: ['#FFFFFF','#FFFF00','#FF9900','#FF0000'], min: 0, max: 40, unit: '°' },
+  hillshade:         { label: 'Hillshade (DEM)',      palette: ['#000000','#808080','#FFFFFF'], min: 0, max: 255 },
+  coastalZone:       { label: 'Coastal Zone (40 km)',  palette: ['#00BFFF','#00BFFF'], min: '', max: '' },
   coastDistance:     { label: 'Distance to Coast',   palette: ['#FF0000','#FFA500','#FFFF00','#00FF00','#0066FF'], min: 0, max: 80, unit: 'km' },
   baseCoastalRisk:   { label: 'Coastal Risk',        palette: ['#006400','#7FFF00','#FFFF00','#FFA500','#FF0000'], min: 0, max: 1 },
   rainRisk:          { label: 'Rainfall Risk',       palette: ['#FFFFFF','#99CCFF','#0066FF','#00008B'], min: 0, max: 1 },
@@ -401,13 +403,13 @@ export const LAYER_LEGEND: Record<string, LegendEntry> = {
   postNDVI:          { label: 'NDVI Post-event',     palette: ['#FFFFFF','#FFFF00','#92D050','#1A6600'], min: -0.1, max: 0.8 },
   dNDVI:             { label: 'ΔNDVI (Veg Change)',  palette: ['#FF0000','#FFA500','#FFFF00','#FFFFFF','#A8D5A2'], min: -0.5, max: 0.2 },
   dNBR:              { label: 'ΔNBR',                palette: ['#FF0000','#FFA500','#FFFF00','#FFFFFF','#92D050'], min: -0.5, max: 0.3 },
-  damageClass:       { label: 'Damage Class',
-    palette: [], min: 1, max: 4,
+  damageClass:       { label: 'Vegetation Damage Class',
+    palette: [], min: '', max: '',
     discrete: [
-      { color: '#00441B', label: 'Forest Damage (1)' },
-      { color: '#78C679', label: 'Crop Damage (2)' },
-      { color: '#FD8D3C', label: 'Severe Damage (3)' },
-      { color: '#BD0026', label: 'General Damage (4)' },
+      { color: '#00441B', label: 'Class 1 — Forest Damage (NDVI>0.6, dNDVI<-0.2)' },
+      { color: '#78C679', label: 'Class 2 — Crop Damage (NDVI 0.35-0.6, dNDVI<-0.2)' },
+      { color: '#FD8D3C', label: 'Class 3 — Severe Damage (dNDVI<-0.4)' },
+      { color: '#BD0026', label: 'Class 4 — General Damage (dNDVI<-0.2)' },
     ]
   },
   // M8 LULC

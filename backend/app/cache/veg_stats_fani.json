@@ -1,0 +1,88 @@
+{
+  "stats": {
+    "total_damage_km2": 1290.2,
+    "dndvi_mean": 0.054,
+    "dndvi_min": -0.574,
+    "dndvi_max": 0.427,
+    "Forest Damage": 276.3,
+    "Crop Damage": 273.8,
+    "General Damage": 47.7
+  },
+  "districts": [
+    {
+      "name": "Kendrapara",
+      "mean_dndvi": -0.039,
+      "min_dndvi": -0.289
+    },
+    {
+      "name": "Puri",
+      "mean_dndvi": -0.038,
+      "min_dndvi": -0.574
+    },
+    {
+      "name": "Sonepur",
+      "mean_dndvi": -0.025,
+      "min_dndvi": -0.32
+    },
+    {
+      "name": "Jagatsinghpur",
+      "mean_dndvi": -0.01,
+      "min_dndvi": -0.295
+    },
+    {
+      "name": "Pashchim Singhbhum",
+      "mean_dndvi": -0.008,
+      "min_dndvi": -0.063
+    },
+    {
+      "name": "Baleshwar",
+      "mean_dndvi": 0.011,
+      "min_dndvi": -0.574
+    },
+    {
+      "name": "Deogarh",
+      "mean_dndvi": 0.021,
+      "min_dndvi": -0.223
+    },
+    {
+      "name": "Kalahandi",
+      "mean_dndvi": 0.028,
+      "min_dndvi": -0.266
+    },
+    {
+      "name": "Sambalpur",
+      "mean_dndvi": 0.029,
+      "min_dndvi": -0.145
+    },
+    {
+      "name": "Cuttack",
+      "mean_dndvi": 0.031,
+      "min_dndvi": -0.402
+    },
+    {
+      "name": "Khordha",
+      "mean_dndvi": 0.031,
+      "min_dndvi": -0.572
+    },
+    {
+      "name": "Sundargarh",
+      "mean_dndvi": 0.036,
+      "min_dndvi": -0.131
+    },
+    {
+      "name": "Bhadrak",
+      "mean_dndvi": 0.039,
+      "min_dndvi": -0.301
+    },
+    {
+      "name": "Boudh",
+      "mean_dndvi": 0.042,
+      "min_dndvi": -0.196
+    },
+    {
+      "name": "Bolangir",
+      "mean_dndvi": 0.045,
+      "min_dndvi": -0.149
+    }
+  ]
+}

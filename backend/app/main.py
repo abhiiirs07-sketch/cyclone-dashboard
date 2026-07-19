@@ -32,7 +32,7 @@ app = FastAPI(
         "endpoints. Every number and every tile comes straight from Earth "
         "Engine — nothing here is computed, estimated, or mocked."
     ),
-    version="0.1.0",
+    version="0.2.0",
 )
 
 origins = os.environ.get("ALLOWED_ORIGINS", "http://localhost:3000").split(",")
@@ -47,24 +47,36 @@ app.add_middleware(
 CACHE_DIR = Path(__file__).parent / "cache"
 CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
+# Layer caches expire after 12 hours (GEE MapIDs expire in ~24h)
+LAYER_TTL = 12 * 3600
+
+
+def _cache_path(endpoint: str, cyclone_name: str) -> Path:
+    return CACHE_DIR / f"{endpoint}_{cyclone_name.lower()}.json"
+
 
 def get_cached_response(endpoint: str, cyclone_name: str, compute_func):
     """
-    Cache helper for heavy GEE statistic computations.
-    Since past cyclone statistics are completely static, we store them forever.
+    Permanent cache for slow statistics (past cyclones never change).
+    Clears cache and retries once if a cached error is detected.
     """
-    cache_path = CACHE_DIR / f"{endpoint}_{cyclone_name.lower()}.json"
-    if cache_path.exists():
+    path = _cache_path(endpoint, cyclone_name)
+    if path.exists():
         try:
-            with open(cache_path, "r", encoding="utf-8") as f:
-                return json.load(f)
+            with open(path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            # Don't serve cached error responses
+            if isinstance(data, dict) and data.get("error"):
+                path.unlink(missing_ok=True)
+            else:
+                return data
         except Exception:
-            pass
+            path.unlink(missing_ok=True)
 
     result = compute_func(cyclone_name)
 
     try:
-        with open(cache_path, "w", encoding="utf-8") as f:
+        with open(path, "w", encoding="utf-8") as f:
             json.dump(result, f, ensure_ascii=False, indent=2)
     except Exception:
         pass
@@ -72,31 +84,67 @@ def get_cached_response(endpoint: str, cyclone_name: str, compute_func):
     return result
 
 
-def get_cached_response_ttl(endpoint: str, cyclone_name: str, compute_func, ttl_seconds: int = 43200):
+def get_cached_response_ttl(endpoint: str, cyclone_name: str, compute_func,
+                             ttl_seconds: int = LAYER_TTL):
     """
-    Cache helper for GEE layers containing dynamic XYZ tile URLs.
-    These MapIDs expire after ~20-24 hours in GEE, so we cache them with a 12-hour TTL.
+    TTL cache for fast layer responses (GEE tile URLs expire ~24h).
+    Clears cache if stale or if a cached error is detected.
     """
-    cache_path = CACHE_DIR / f"{endpoint}_{cyclone_name.lower()}.json"
-    if cache_path.exists():
+    path = _cache_path(endpoint, cyclone_name)
+    if path.exists():
         try:
-            mtime = cache_path.stat().st_mtime
+            mtime = path.stat().st_mtime
             if time.time() - mtime < ttl_seconds:
-                with open(cache_path, "r", encoding="utf-8") as f:
-                    return json.load(f)
+                with open(path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                # Don't serve cached error responses
+                if isinstance(data, dict) and data.get("error"):
+                    path.unlink(missing_ok=True)
+                else:
+                    return data
+            else:
+                path.unlink(missing_ok=True)
         except Exception:
-            pass
+            path.unlink(missing_ok=True)
 
     result = compute_func(cyclone_name)
 
     try:
-        with open(cache_path, "w", encoding="utf-8") as f:
+        with open(path, "w", encoding="utf-8") as f:
             json.dump(result, f, ensure_ascii=False, indent=2)
     except Exception:
         pass
 
     return result
 
+
+def _safe_run(endpoint: str, cyclone_name: str, compute_func, use_ttl: bool = False):
+    """
+    Wraps a module call with EE init check + comprehensive error handling.
+    Returns an HTTP 200 with error details rather than crashing, so the
+    frontend can show a graceful error rather than a spinner forever.
+    """
+    try:
+        ensure_initialized()
+    except EENotConfiguredError as e:
+        raise HTTPException(status_code=503, detail=str(e)) from e
+    try:
+        if use_ttl:
+            return get_cached_response_ttl(endpoint, cyclone_name, compute_func)
+        return get_cached_response(endpoint, cyclone_name, compute_func)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
+    except Exception as e:
+        # Log the real error but return a structured 500 with details
+        import traceback
+        tb = traceback.format_exc()
+        print(f"[ERROR] {endpoint}/{cyclone_name}: {e}\n{tb}")
+        raise HTTPException(status_code=500, detail=f"{type(e).__name__}: {e}") from e
+
+
+# ---------------------------------------------------------------------------
+# Health & metadata
+# ---------------------------------------------------------------------------
 
 @app.get("/api/health")
 def health():
@@ -109,280 +157,176 @@ def health():
 
 @app.get("/api/cyclones")
 def list_cyclones():
-    """Straight from cycloneDB / cycloneDates in your script — no EE call needed."""
     return [
         {"id": name, "label": f"{name} ({info['year']})", **info, "dates": CYCLONE_DATES[name]}
         for name, info in CYCLONE_DB.items()
     ]
 
 
+@app.delete("/api/cache/{cyclone_name}")
+def clear_cache(cyclone_name: str):
+    """Clear all cached responses for a cyclone (forces fresh GEE computation)."""
+    deleted = []
+    for path in CACHE_DIR.glob(f"*_{cyclone_name.lower()}.json"):
+        path.unlink(missing_ok=True)
+        deleted.append(path.name)
+    return {"deleted": deleted, "count": len(deleted)}
+
+
+@app.delete("/api/cache")
+def clear_all_cache():
+    """Clear ALL cached responses (forces fresh GEE computation for everything)."""
+    deleted = []
+    for path in CACHE_DIR.glob("*.json"):
+        path.unlink(missing_ok=True)
+        deleted.append(path.name)
+    return {"deleted": deleted, "count": len(deleted)}
+
+
+# ---------------------------------------------------------------------------
+# Module 1 — Study Area
+# ---------------------------------------------------------------------------
+
 @app.get("/api/modules/1/study-area/{cyclone_name}")
 def study_area(cyclone_name: str):
-    try:
-        ensure_initialized()
-    except EENotConfiguredError as e:
-        raise HTTPException(status_code=503, detail=str(e)) from e
-    try:
-        return get_cached_response("study_area", cyclone_name, module1_study_area.get_study_area)
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e)) from e
+    return _safe_run("study_area", cyclone_name, module1_study_area.get_study_area)
 
+
+# ---------------------------------------------------------------------------
+# Module 2 — Meteorology
+# ---------------------------------------------------------------------------
 
 @app.get("/api/modules/2/meteorology/{cyclone_name}/layers")
 def meteorology_layers(cyclone_name: str):
-    """Fast (~5 s): returns GEE XYZ tile URLs for all Module-2 map layers (12-hour TTL cache)."""
-    try:
-        ensure_initialized()
-    except EENotConfiguredError as e:
-        raise HTTPException(status_code=503, detail=str(e)) from e
-    try:
-        return get_cached_response_ttl("met_layers", cyclone_name, module2_meteorology.get_meteorology_layers)
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e)) from e
+    return _safe_run("met_layers", cyclone_name, module2_meteorology.get_meteorology_layers, use_ttl=True)
 
 
 @app.get("/api/modules/2/meteorology/{cyclone_name}/stats")
 def meteorology_stats(cyclone_name: str):
-    """Slow (~2-3 min): returns area statistics and time-series from GEE (permanently cached)."""
-    try:
-        ensure_initialized()
-    except EENotConfiguredError as e:
-        raise HTTPException(status_code=503, detail=str(e)) from e
-    try:
-        return get_cached_response("met_stats", cyclone_name, module2_meteorology.get_meteorology_stats)
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e)) from e
+    return _safe_run("met_stats", cyclone_name, module2_meteorology.get_meteorology_stats)
 
+
+# ---------------------------------------------------------------------------
+# Module 3 — Cyclone Track
+# ---------------------------------------------------------------------------
 
 @app.get("/api/modules/3/track/{cyclone_name}/layers")
 def track_layers(cyclone_name: str):
-    """Fast (~10 s): IBTrACS track GeoJSON + corridor + rainfall tile URLs (12-hour TTL cache)."""
-    try:
-        ensure_initialized()
-    except EENotConfiguredError as e:
-        raise HTTPException(status_code=503, detail=str(e)) from e
-    try:
-        return get_cached_response_ttl("track_layers", cyclone_name, module3_track.get_track_layers)
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e)) from e
+    return _safe_run("track_layers", cyclone_name, module3_track.get_track_layers, use_ttl=True)
 
 
 @app.get("/api/modules/3/track/{cyclone_name}/stats")
 def track_stats(cyclone_name: str):
-    """Slow (~2-3 min): track statistics + corridor areas + district/state rainfall (permanently cached)."""
-    try:
-        ensure_initialized()
-    except EENotConfiguredError as e:
-        raise HTTPException(status_code=503, detail=str(e)) from e
-    try:
-        return get_cached_response("track_stats", cyclone_name, module3_track.get_track_stats)
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e)) from e
+    return _safe_run("track_stats", cyclone_name, module3_track.get_track_stats)
 
+
+# ---------------------------------------------------------------------------
+# Module 5 — Flood Mapping
+# ---------------------------------------------------------------------------
 
 @app.get("/api/modules/5/flood/{cyclone_name}/layers")
 def flood_layers(cyclone_name: str):
-    """Fast (~10-15 s): Sentinel-1 SAR tile URLs — pre/post SAR, diff, flood extent, depth proxy (12-hour TTL)."""
-    try:
-        ensure_initialized()
-    except EENotConfiguredError as e:
-        raise HTTPException(status_code=503, detail=str(e)) from e
-    try:
-        return get_cached_response_ttl("flood_layers", cyclone_name, module5_flood.get_flood_layers)
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e)) from e
+    return _safe_run("flood_layers", cyclone_name, module5_flood.get_flood_layers, use_ttl=True)
 
 
 @app.get("/api/modules/5/flood/{cyclone_name}/stats")
 def flood_stats(cyclone_name: str):
-    """Slow (~3-5 min): flood area, land cover breakdown, population exposure, district table (permanently cached)."""
-    try:
-        ensure_initialized()
-    except EENotConfiguredError as e:
-        raise HTTPException(status_code=503, detail=str(e)) from e
-    try:
-        return get_cached_response("flood_stats", cyclone_name, module5_flood.get_flood_stats)
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e)) from e
+    return _safe_run("flood_stats", cyclone_name, module5_flood.get_flood_stats)
 
+
+# ---------------------------------------------------------------------------
+# Module 6 — Terrain, Storm Surge & Hazard
+# ---------------------------------------------------------------------------
 
 @app.get("/api/modules/6/hazard/{cyclone_name}/layers")
 def hazard_layers(cyclone_name: str):
-    """Fast (~15-20 s): DEM/slope/hillshade/coastal/surge/hazard tile URLs (12-hour TTL cache)."""
-    try:
-        ensure_initialized()
-    except EENotConfiguredError as e:
-        raise HTTPException(status_code=503, detail=str(e)) from e
-    try:
-        return get_cached_response_ttl("hazard_layers", cyclone_name, module6_hazard.get_hazard_layers)
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e)) from e
+    return _safe_run("hazard_layers", cyclone_name, module6_hazard.get_hazard_layers, use_ttl=True)
 
 
 @app.get("/api/modules/6/hazard/{cyclone_name}/stats")
 def hazard_stats(cyclone_name: str):
-    """Slow (~4-6 min): terrain stats + hazard/surge scores + district ranking (permanently cached)."""
-    try:
-        ensure_initialized()
-    except EENotConfiguredError as e:
-        raise HTTPException(status_code=503, detail=str(e)) from e
-    try:
-        return get_cached_response("hazard_stats", cyclone_name, module6_hazard.get_hazard_stats)
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e)) from e
+    return _safe_run("hazard_stats", cyclone_name, module6_hazard.get_hazard_stats)
 
+
+# ---------------------------------------------------------------------------
+# Module 7 — Vegetation Damage
+# ---------------------------------------------------------------------------
 
 @app.get("/api/modules/7/vegetation/{cyclone_name}/layers")
 def veg_layers(cyclone_name: str):
-    """Fast (~15 s): Sentinel-2 NDVI pre/post/diff + damage class tile URLs (12-hour TTL cache)."""
-    try:
-        ensure_initialized()
-    except EENotConfiguredError as e:
-        raise HTTPException(status_code=503, detail=str(e)) from e
-    try:
-        return get_cached_response_ttl("veg_layers", cyclone_name, module7_vegetation.get_veg_layers)
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e)) from e
+    return _safe_run("veg_layers", cyclone_name, module7_vegetation.get_veg_layers, use_ttl=True)
 
 
 @app.get("/api/modules/7/vegetation/{cyclone_name}/stats")
 def veg_stats(cyclone_name: str):
-    """Slow (~3-4 min): damage class areas + district-level dNDVI stats (permanently cached)."""
-    try:
-        ensure_initialized()
-    except EENotConfiguredError as e:
-        raise HTTPException(status_code=503, detail=str(e)) from e
-    try:
-        return get_cached_response("veg_stats", cyclone_name, module7_vegetation.get_veg_stats)
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e)) from e
+    return _safe_run("veg_stats", cyclone_name, module7_vegetation.get_veg_stats)
 
+
+# ---------------------------------------------------------------------------
+# Module 8 — LULC Impact
+# ---------------------------------------------------------------------------
 
 @app.get("/api/modules/8/lulc/{cyclone_name}/layers")
 def lulc_layers(cyclone_name: str):
-    """Fast (~15 s): ESA WorldCover + impact-type + flooded/damaged LULC tile URLs (12-hour TTL cache)."""
-    try:
-        ensure_initialized()
-    except EENotConfiguredError as e:
-        raise HTTPException(status_code=503, detail=str(e)) from e
-    try:
-        return get_cached_response_ttl("lulc_layers", cyclone_name, module8_lulc.get_lulc_layers)
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e)) from e
+    return _safe_run("lulc_layers", cyclone_name, module8_lulc.get_lulc_layers, use_ttl=True)
 
 
 @app.get("/api/modules/8/lulc/{cyclone_name}/stats")
 def lulc_stats(cyclone_name: str):
-    """Slow (~4-5 min): per-class flood/veg-damage areas + district LULC impact scores (permanently cached)."""
-    try:
-        ensure_initialized()
-    except EENotConfiguredError as e:
-        raise HTTPException(status_code=503, detail=str(e)) from e
-    try:
-        return get_cached_response("lulc_stats", cyclone_name, module8_lulc.get_lulc_stats)
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e)) from e
+    return _safe_run("lulc_stats", cyclone_name, module8_lulc.get_lulc_stats)
 
+
+# ---------------------------------------------------------------------------
+# Module 9 — Population Exposure
+# ---------------------------------------------------------------------------
 
 @app.get("/api/modules/9/population/{cyclone_name}/layers")
 def pop_layers(cyclone_name: str):
-    """Fast (~15 s): GPW population count/density + exposure layer tile URLs (12-hour TTL cache)."""
-    try:
-        ensure_initialized()
-    except EENotConfiguredError as e:
-        raise HTTPException(status_code=503, detail=str(e)) from e
-    try:
-        return get_cached_response_ttl("pop_layers", cyclone_name, module9_population.get_pop_layers)
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e)) from e
+    return _safe_run("pop_layers", cyclone_name, module9_population.get_pop_layers, use_ttl=True)
 
 
 @app.get("/api/modules/9/population/{cyclone_name}/stats")
 def pop_stats(cyclone_name: str):
-    """Slow (~4-5 min): total/flooded/high-haz population counts + district table (permanently cached)."""
-    try:
-        ensure_initialized()
-    except EENotConfiguredError as e:
-        raise HTTPException(status_code=503, detail=str(e)) from e
-    try:
-        return get_cached_response("pop_stats", cyclone_name, module9_population.get_pop_stats)
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e)) from e
+    return _safe_run("pop_stats", cyclone_name, module9_population.get_pop_stats)
 
+
+# ---------------------------------------------------------------------------
+# Module 10 — Multi-Hazard Summary
+# ---------------------------------------------------------------------------
 
 @app.get("/api/modules/10/multihazard/{cyclone_name}/layers")
 def multihazard_layers(cyclone_name: str):
-    """Fast (~15 s): composite multi-hazard index + component risk layer tile URLs (12-hour TTL cache)."""
-    try:
-        ensure_initialized()
-    except EENotConfiguredError as e:
-        raise HTTPException(status_code=503, detail=str(e)) from e
-    try:
-        return get_cached_response_ttl("mh_layers", cyclone_name, module10_multihazard.get_multihazard_layers)
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e)) from e
+    return _safe_run("mh_layers", cyclone_name, module10_multihazard.get_multihazard_layers, use_ttl=True)
 
 
 @app.get("/api/modules/10/multihazard/{cyclone_name}/stats")
 def multihazard_stats(cyclone_name: str):
-    """Slow (~5 min): class area breakdown + district risk ranking (top 20) (permanently cached)."""
-    try:
-        ensure_initialized()
-    except EENotConfiguredError as e:
-        raise HTTPException(status_code=503, detail=str(e)) from e
-    try:
-        return get_cached_response("mh_stats", cyclone_name, module10_multihazard.get_multihazard_stats)
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e)) from e
+    return _safe_run("mh_stats", cyclone_name, module10_multihazard.get_multihazard_stats)
 
+
+# ---------------------------------------------------------------------------
+# Module 11 — Validation
+# ---------------------------------------------------------------------------
 
 @app.get("/api/modules/11/validation/{cyclone_name}/layers")
 def validation_layers(cyclone_name: str):
-    """Fast (~20 s): SAR vs optical confusion map + Landsat dNDVI + veg agreement tile URLs (12-hour TTL cache)."""
-    try:
-        ensure_initialized()
-    except EENotConfiguredError as e:
-        raise HTTPException(status_code=503, detail=str(e)) from e
-    try:
-        return get_cached_response_ttl("val_layers", cyclone_name, module11_validation.get_validation_layers)
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e)) from e
+    return _safe_run("val_layers", cyclone_name, module11_validation.get_validation_layers, use_ttl=True)
 
 
 @app.get("/api/modules/11/validation/{cyclone_name}/stats")
 def validation_stats(cyclone_name: str):
-    """Slow (~5-6 min): flood accuracy metrics (precision/recall/F1/OA/IoU) + district table (permanently cached)."""
-    try:
-        ensure_initialized()
-    except EENotConfiguredError as e:
-        raise HTTPException(status_code=503, detail=str(e)) from e
-    try:
-        return get_cached_response("val_stats", cyclone_name, module11_validation.get_validation_stats)
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e)) from e
+    return _safe_run("val_stats", cyclone_name, module11_validation.get_validation_stats)
 
+
+# ---------------------------------------------------------------------------
+# Module 12 — Reports & Export
+# ---------------------------------------------------------------------------
 
 @app.get("/api/modules/12/reports/{cyclone_name}/summary")
 def report_summary(cyclone_name: str):
-    """Fast (~5-10 s): JSON summary report aggregating all module stats (permanently cached)."""
-    try:
-        ensure_initialized()
-    except EENotConfiguredError as e:
-        raise HTTPException(status_code=503, detail=str(e)) from e
-    try:
-        return get_cached_response("report_summary", cyclone_name, module12_reports.get_report_summary)
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e)) from e
+    return _safe_run("report_summary", cyclone_name, module12_reports.get_report_summary)
 
 
 @app.get("/api/modules/12/reports/{cyclone_name}/export")
 def report_export(cyclone_name: str):
-    """Slow (~2-3 min): district-level CSV with hazard, flood, and population metrics (permanently cached)."""
-    try:
-        ensure_initialized()
-    except EENotConfiguredError as e:
-        raise HTTPException(status_code=503, detail=str(e)) from e
-    try:
-        return get_cached_response("report_export", cyclone_name, module12_reports.get_export_data)
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e)) from e
+    return _safe_run("report_export", cyclone_name, module12_reports.get_export_data)
