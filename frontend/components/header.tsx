@@ -23,7 +23,9 @@ export function Header({
     document.documentElement.classList.toggle('dark', dark);
   }, [dark]);
 
-  const connected = health.data?.earthEngine === 'connected';
+  const isLoading   = health.isLoading || health.isFetching || health.fetchStatus === 'fetching';
+  const connected    = health.data?.earthEngine === 'connected';
+  const failed       = health.isError && !isLoading;          // all retries exhausted
 
   return (
     <header className="flex h-14 items-center gap-3 border-b border-[var(--border-subtle)] bg-[var(--surface-1)]/80 px-4 backdrop-blur-md">
@@ -94,10 +96,16 @@ export function Header({
         <User className="h-4 w-4" />
       </button>
 
-      <div className="flex items-center gap-1.5 text-[11px]" title={health.data?.detail ?? ''}>
-        <span className={`h-1.5 w-1.5 rounded-full ${connected ? 'bg-emerald-400' : 'bg-amber-400'}`} />
+      <div className="flex items-center gap-1.5 text-[11px]" title={health.data?.detail ?? (isLoading ? 'Waking up Railway backend…' : 'Could not reach backend')}>
+        <span className={`h-2 w-2 rounded-full transition-colors duration-500 ${
+          connected ? 'bg-emerald-400 shadow-[0_0_6px_#34d399]'
+          : isLoading ? 'animate-pulse bg-amber-400'
+          : 'bg-red-400'
+        }`} />
         <span className="hidden text-[var(--text-tertiary)] xl:inline">
-          {connected ? 'Earth Engine connected' : 'Earth Engine not connected'}
+          {connected ? 'Earth Engine connected'
+           : isLoading ? 'Connecting to Earth Engine…'
+           : 'Earth Engine not connected'}
         </span>
       </div>
     </header>

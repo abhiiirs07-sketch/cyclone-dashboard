@@ -149,7 +149,17 @@ export function useMeteorologyStats(cyclone: string | null) {
 }
 
 export function useBackendHealth() {
-  return useQuery({ queryKey: ['health'], queryFn: getHealth, refetchInterval: 15000, retry: false });
+  return useQuery({
+    queryKey: ['health'],
+    queryFn: getHealth,
+    // Retry 5× with exponential backoff — handles Railway cold-start (30-60s)
+    retry: 5,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 30_000), // 2s, 4s, 8s, 16s, 30s
+    // Poll every 30s to keep Railway awake (free tier sleeps after 30min idle)
+    refetchInterval: 30_000,
+    // Don't show error state until all retries are exhausted
+    refetchIntervalInBackground: true,
+  });
 }
 
 // ---- Module 3: Cyclone Track + Module 4: Rainfall Footprint ----
