@@ -262,6 +262,9 @@ def get_track_stats(cyclone_name: str) -> dict:
         scale=25000, tileScale=16
     ).filter(ee.Filter.notNull(['max']))
 
+    top20_rain_list = dist_rain.sort('max', False).limit(20).select(['ADM2_NAME', 'mean', 'max'], retainGeometry=False).toList(20)
+    state_rain_list = state_rain.select(['ADM1_NAME', 'mean', 'max'], retainGeometry=False).toList(10)
+
     # Combine all GEE calculations into a single batch call for fast response (<3s)
     batch_dict = ee.Dictionary({
         'track': ee.Dictionary({
@@ -277,8 +280,8 @@ def get_track_stats(cyclone_name: str) -> dict:
             'multihazard_100km_km2': ee.Number(buf100.area(500)).divide(1e6),
             'flood_250km_km2':       ee.Number(buf250.area(500)).divide(1e6),
         }),
-        'top20_rain': dist_rain.sort('max', False).limit(20).select(['ADM2_NAME', 'mean', 'max']),
-        'state_rain': state_rain.select(['ADM1_NAME', 'mean', 'max']),
+        'top20_rain': top20_rain_list,
+        'state_rain': state_rain_list,
     })
 
     results = batch_dict.getInfo()
@@ -287,26 +290,23 @@ def get_track_stats(cyclone_name: str) -> dict:
     track_stats['length_km'] = track_len_km
 
     corridor_stats = results.get('corridors', {})
-    top20_info     = results.get('top20_rain', {})
-    state_info     = results.get('state_rain', {})
+    top20_feats    = results.get('top20_rain', []) or []
+    state_feats    = results.get('state_rain', []) or []
 
-    def _feat_to_dict(fc_info, name_key):
-        if not isinstance(fc_info, dict):
-            return []
-        features = fc_info.get('features', []) or []
+    def _feat_list_to_dict(feat_list, name_key):
         return [
             {
                 'name': f.get('properties', {}).get(name_key, '?'),
                 'mean': round(f.get('properties', {}).get('mean', 0) or 0, 1),
                 'max':  round(f.get('properties', {}).get('max',  0) or 0, 1),
             }
-            for f in features
+            for f in (feat_list or [])
             if isinstance(f, dict) and 'properties' in f
         ]
 
     return {
         'track':            track_stats,
         'corridors':        corridor_stats,
-        'districtRainfall': _feat_to_dict(top20_info, 'ADM2_NAME'),
-        'stateRainfall':    _feat_to_dict(state_info, 'ADM1_NAME'),
+        'districtRainfall': _feat_list_to_dict(top20_feats, 'ADM2_NAME'),
+        'stateRainfall':    _feat_list_to_dict(state_feats, 'ADM1_NAME'),
     }
