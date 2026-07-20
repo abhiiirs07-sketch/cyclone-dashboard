@@ -649,8 +649,9 @@ export interface ValidationLayersResponse {
 
 export interface ValidationStatsResponse {
   flood_accuracy: {
-    tp: number; fp: number; fn: number; tn: number;
+    samples?: number; tp: number; fp: number; fn: number; tn: number;
     precision: number; recall: number; f1: number; oa: number; iou: number;
+    mae?: number; rmse?: number; r2?: number;
   };
   veg_agreement_pct: number;
   districts: Array<{ name: string; precision: number; recall: number; f1: number }>;

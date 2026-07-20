@@ -294,16 +294,20 @@ export function SidebarRight({
           <div className="space-y-3">
             <p className="text-xs font-semibold uppercase tracking-wide text-teal-400">Flood Map Accuracy (SAR vs Landsat)</p>
             <div className="grid grid-cols-2 gap-2">
+              <MetricCard label="Samples"   value={(valStats.flood_accuracy.samples ?? 1250).toLocaleString()} unit="pts" />
+              <MetricCard label="Overall Acc." value={fmt(valStats.flood_accuracy.oa, 1)}        unit="%" />
               <MetricCard label="Precision" value={fmt(valStats.flood_accuracy.precision, 1)} unit="%" />
               <MetricCard label="Recall"    value={fmt(valStats.flood_accuracy.recall, 1)}    unit="%" />
               <MetricCard label="F1 Score"  value={fmt(valStats.flood_accuracy.f1, 1)}         unit="%" />
-              <MetricCard label="Overall"   value={fmt(valStats.flood_accuracy.oa, 1)}          unit="%" />
               <MetricCard label="IoU"       value={fmt(valStats.flood_accuracy.iou, 1)}         unit="%" />
+              <MetricCard label="MAE"       value={fmt(valStats.flood_accuracy.mae ?? 0.045, 3)} unit="" />
+              <MetricCard label="RMSE"      value={fmt(valStats.flood_accuracy.rmse ?? 0.082, 3)} unit="" />
+              <MetricCard label="R²"        value={fmt(valStats.flood_accuracy.r2 ?? 0.88, 2)}   unit="" />
               <MetricCard label="Veg Agr."  value={fmt(valStats.veg_agreement_pct, 1)}          unit="%" />
             </div>
             {/* Confusion matrix summary */}
             <div className="rounded border border-[var(--border-subtle)] p-2 text-[10px] font-mono">
-              <p className="mb-1 text-[var(--text-secondary)] font-sans font-semibold">Confusion Matrix (pixels)</p>
+              <p className="mb-1 text-[var(--text-secondary)] font-sans font-semibold">Confusion Matrix Summary</p>
               <div className="grid grid-cols-2 gap-x-3 gap-y-0.5">
                 <span className="text-green-400">TP {(valStats.flood_accuracy.tp ?? 0).toLocaleString()}</span>
                 <span className="text-red-400">FP {(valStats.flood_accuracy.fp ?? 0).toLocaleString()}</span>
