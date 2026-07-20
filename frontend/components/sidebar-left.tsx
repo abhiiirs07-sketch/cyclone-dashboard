@@ -156,12 +156,12 @@ export function SidebarLeft({
       {/* Study area summary */}
       <Section title="Study area" open={openSection === 'Study area'} onToggle={t => setOpenSection(t ? 'Study area' : '')}>
         {isLoading && <SkeletonLines n={3} />}
-        {studyArea && (
+        {studyArea?.stats && (
           <dl className="space-y-1.5">
-            <Stat label="Landfall"       value={`${studyArea.stats.landfall}, ${studyArea.stats.landfallDate}`} />
-            <Stat label="Study area"     value={`${studyArea.stats.studyArea_km2.toFixed(1)} km²`} />
-            <Stat label="Reporting area" value={`${studyArea.stats.reportingArea_km2.toFixed(1)} km²`} />
-            <Stat label="Districts"      value={String(studyArea.stats.districtCount)} />
+            <Stat label="Landfall"       value={`${studyArea.stats.landfall ?? '—'}, ${studyArea.stats.landfallDate ?? ''}`} />
+            <Stat label="Study area"     value={`${(studyArea.stats.studyArea_km2 ?? 0).toFixed(1)} km²`} />
+            <Stat label="Reporting area" value={`${(studyArea.stats.reportingArea_km2 ?? 0).toFixed(1)} km²`} />
+            <Stat label="Districts"      value={String(studyArea.stats.districtCount ?? 0)} />
           </dl>
         )}
         {!studyArea && !isLoading && <p className="text-xs text-[var(--text-tertiary)]">Select a cyclone to begin.</p>}
