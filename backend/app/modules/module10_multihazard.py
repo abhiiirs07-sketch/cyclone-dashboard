@@ -130,11 +130,11 @@ def get_multihazard_layers(cyclone_name: str) -> dict:
     t = _build_multihazard(cyclone_name)
 
     tile_configs = {
-        'mhIndex':    (t['mh_index'],   {'min': 0, 'max': 1, 'palette': '006400,78C679,FFFF00,FD8D3C,BD0026,67000D'}),
+        'mhIndex':    (t['mh_index'].updateMask(t['mh_index'].gt(0.05)),   {'min': 0, 'max': 1, 'palette': '006400,78C679,FFFF00,FD8D3C,BD0026,67000D'}),
         'mhClass':    (t['mh_class'].selfMask(), {'min': 1, 'max': 5, 'palette': '006400,78C679,FFFF00,FD8D3C,BD0026'}),
-        'floodRisk':  (t['flood_risk'], {'min': 0, 'max': 1, 'palette': 'FFFFFF,C6DBEF,6BAED6,2171B5,084594'}),
-        'vegRisk':    (t['veg_risk'],   {'min': 0, 'max': 1, 'palette': 'FFFFFF,D9F0D3,78C679,1A6600,00441B'}),
-        'popRisk':    (t['pop_risk'],   {'min': 0, 'max': 1, 'palette': 'FFFFFF,FFEDA0,FEB24C,FC4E2A,BD0026'}),
+        'floodRisk':  (t['flood_risk'].updateMask(t['flood_risk'].gt(0.01)), {'min': 0, 'max': 1, 'palette': 'C6DBEF,6BAED6,2171B5,084594,042F6B'}),
+        'vegRisk':    (t['veg_risk'].updateMask(t['veg_risk'].gt(0.01)),   {'min': 0, 'max': 1, 'palette': 'D9F0D3,78C679,1A6600,00441B,002200'}),
+        'popRisk':    (t['pop_risk'].updateMask(t['pop_risk'].gt(0.01)),   {'min': 0, 'max': 1, 'palette': 'FFEDA0,FEB24C,FC4E2A,BD0026,67000D'}),
     }
 
     def _get_tile(name_img_vis):
