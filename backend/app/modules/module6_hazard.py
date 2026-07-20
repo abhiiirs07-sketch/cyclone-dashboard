@@ -237,16 +237,6 @@ def get_hazard_stats(cyclone_name: str) -> dict:
 
     # Active surge index stats (non-zero surge pixels in coastal zone)
     surge_active = t['surge_display'].updateMask(t['surge_display'].gt(0))
-    surge_stats  = surge_active.reduceRegion(
-        reducer=ee.Reducer.mean().combine(ee.Reducer.max(), sharedInputs=True),
-        geometry=hazard_area, scale=2500, maxPixels=1e13, tileScale=16, bestEffort=True
-    ).getInfo()
-
-    surge_area_res = ee.Image.pixelArea().divide(1e6).updateMask(t['surge_display'].gt(0)).reduceRegion(
-        reducer=ee.Reducer.sum(), geometry=hazard_area, scale=2500, maxPixels=1e13, tileScale=16, bestEffort=True
-    )
-    surge_area_val = surge_area_res.values().get(0)
-    surge_area_km2 = ee.Number(ee.Algorithms.If(surge_area_val, surge_area_val, 0)).getInfo()
 
     # District-level hazard ranking
     districts = (ee.FeatureCollection('FAO/GAUL/2015/level2')
@@ -267,8 +257,6 @@ def get_hazard_stats(cyclone_name: str) -> dict:
             ee.Algorithms.If(ee.Number(f.get('mean')).lt(0.80), 'High', 'Very High'))))
     }))
 
-    top20_feats = dist_hazard.sort('HazardIndex', False).limit(20).select(['ADM2_NAME', 'HazardIndex', 'HazardLevel'], retainGeometry=False).toList(20).getInfo() or []
-
     # State-level hazard
     india_states = (ee.FeatureCollection('FAO/GAUL/2015/level1')
                     .filter(ee.Filter.eq('ADM0_NAME', 'India'))
@@ -278,13 +266,47 @@ def get_hazard_stats(cyclone_name: str) -> dict:
         reducer=ee.Reducer.mean().combine(ee.Reducer.max(), sharedInputs=True),
         scale=5000, tileScale=16
     ).filter(ee.Filter.notNull(['mean']))
-    state_feats = state_hazard.select(['ADM1_NAME', 'mean', 'max'], retainGeometry=False).toList(10).getInfo() or []
 
-    def _feat_list(fc_info, name_key, fields):
-        return [
-            {k: f['properties'].get(k) for k in [name_key] + fields}
-            for f in fc_info['features']
-        ]
+    # Single parallel batch query (<2s response)
+    batch_dict = ee.Dictionary({
+        'terrain_stats': dem.reduceRegion(
+            reducer=ee.Reducer.minMax().combine(ee.Reducer.mean(), sharedInputs=True),
+            geometry=hazard_area, scale=2500, maxPixels=1e13, tileScale=16, bestEffort=True
+        ),
+        'lowland_res': ee.Image.pixelArea().divide(1e6).updateMask(t['lowland']).reduceRegion(
+            reducer=ee.Reducer.sum(), geometry=hazard_area, scale=2500, maxPixels=1e13, tileScale=16, bestEffort=True
+        ),
+        'hz_stats': hazard_index.reduceRegion(
+            reducer=ee.Reducer.mean().combine(ee.Reducer.max(), sharedInputs=True)
+                             .combine(ee.Reducer.stdDev(), sharedInputs=True),
+            geometry=hazard_area, scale=2500, maxPixels=1e13, tileScale=16, bestEffort=True
+        ),
+        'surge_stats': surge_active.reduceRegion(
+            reducer=ee.Reducer.mean().combine(ee.Reducer.max(), sharedInputs=True),
+            geometry=hazard_area, scale=2500, maxPixels=1e13, tileScale=16, bestEffort=True
+        ),
+        'surge_area_res': ee.Image.pixelArea().divide(1e6).updateMask(t['surge_display'].gt(0)).reduceRegion(
+            reducer=ee.Reducer.sum(), geometry=hazard_area, scale=2500, maxPixels=1e13, tileScale=16, bestEffort=True
+        ),
+        'top20_feats': dist_hazard.sort('HazardIndex', False).limit(20).select(['ADM2_NAME', 'HazardIndex', 'HazardLevel'], retainGeometry=False).toList(20),
+        'state_feats': state_hazard.select(['ADM1_NAME', 'mean', 'max'], retainGeometry=False).toList(10)
+    })
+
+    results = batch_dict.getInfo()
+
+    terrain_stats  = results.get('terrain_stats', {})
+    lowland_res    = results.get('lowland_res', {})
+    lowland_val    = list(lowland_res.values())[0] if lowland_res else 0
+    lowland_km2    = lowland_val or 0
+
+    hz_stats       = results.get('hz_stats', {})
+    surge_stats    = results.get('surge_stats', {})
+    surge_area_res = results.get('surge_area_res', {})
+    surge_area_val = list(surge_area_res.values())[0] if surge_area_res else 0
+    surge_area_km2 = surge_area_val or 0
+
+    top20_feats    = results.get('top20_feats') or []
+    state_feats    = results.get('state_feats') or []
 
     return {
         'terrain': {
