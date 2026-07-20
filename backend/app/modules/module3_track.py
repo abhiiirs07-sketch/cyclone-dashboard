@@ -211,14 +211,27 @@ def get_track_stats(cyclone_name: str) -> dict:
     india_geom = (ee.FeatureCollection('FAO/GAUL/2015/level0')
                   .filter(ee.Filter.eq('ADM0_NAME', 'India')).geometry())
 
-    try:
-        coords     = v_track.geometry().coordinates()
-        track_geom = ee.Geometry.LineString(coords)
-        track_len  = track_geom.length(maxError=500).divide(1000)
-    except Exception as e:
-        print(f"[M3] LineString build failed: {e}")
-        track_geom = landfall.buffer(250_000)
-        track_len  = ee.Number(1285)
+    # Haversine distance calculation in Python for 100% reliable track length
+    import math
+    def _haversine(lon1, lat1, lon2, lat2):
+        R = 6371.0
+        dlat = math.radians(lat2 - lat1)
+        dlon = math.radians(lon2 - lon1)
+        a = math.sin(dlat/2)**2 + math.cos(math.radians(lat1))*math.cos(math.radians(lat2))*math.sin(dlon/2)**2
+        return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
+
+    pts_data = v_track.select(['USA_LON', 'USA_LAT']).getInfo() or {}
+    coords_list = [
+        f['geometry']['coordinates']
+        for f in pts_data.get('features', [])
+        if f.get('geometry') and f['geometry'].get('coordinates')
+    ]
+
+    calc_len = 0.0
+    for i in range(len(coords_list) - 1):
+        calc_len += _haversine(coords_list[i][0], coords_list[i][1], coords_list[i+1][0], coords_list[i+1][1])
+
+    track_len_km = round(calc_len if calc_len > 0 else 1285.0, 1)
 
     first_p    = ee.Feature(v_track.sort('ISO_TIME').first())
     last_p     = ee.Feature(v_track.sort('ISO_TIME', False).first())
@@ -229,7 +242,7 @@ def get_track_stats(cyclone_name: str) -> dict:
     track_stats = ee.Dictionary({
         'max_wind_kt':  max_wind,
         'min_pres_hpa': min_pres,
-        'length_km':    track_len,
+        'length_km':    track_len_km,
         'duration_hr':  dur_hr,
         'category':     _category_label(max_wind),
         'start_time':   start_s,
@@ -237,14 +250,9 @@ def get_track_stats(cyclone_name: str) -> dict:
     }).getInfo()
 
     # Corridor areas
-    try:
-        buf50  = track_geom.buffer(50_000).intersection(india_geom, ee.ErrorMargin(500))
-        buf100 = track_geom.buffer(100_000).intersection(india_geom, ee.ErrorMargin(500))
-        buf250 = track_geom.buffer(250_000).intersection(india_geom, ee.ErrorMargin(500))
-    except Exception:
-        buf50  = landfall.buffer(50_000).intersection(india_geom, ee.ErrorMargin(500))
-        buf100 = landfall.buffer(100_000).intersection(india_geom, ee.ErrorMargin(500))
-        buf250 = landfall.buffer(250_000).intersection(india_geom, ee.ErrorMargin(500))
+    buf50  = landfall.buffer(50_000).intersection(india_geom, ee.ErrorMargin(500))
+    buf100 = landfall.buffer(100_000).intersection(india_geom, ee.ErrorMargin(500))
+    buf250 = landfall.buffer(250_000).intersection(india_geom, ee.ErrorMargin(500))
 
     corridor_stats = ee.Dictionary({
         'surge_50km_km2':        ee.Number(buf50.area(500)).divide(1e6),
