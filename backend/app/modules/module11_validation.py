@@ -111,19 +111,19 @@ def _build_validation(cyclone_name: str) -> dict:
     # S-2 dNDVI from M7 (re-derive for comparison)
     evt_s = ee.Date(dates['evtS'])
     evt_e = ee.Date(dates['evtE'])
-    s2_raw  = (ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED')
-               .filterBounds(buf250)
-               .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', 60)))
-    s2_prob = ee.ImageCollection('COPERNICUS/S2_CLOUD_PROBABILITY').filterBounds(buf250)
-    s2 = ee.ImageCollection(
-        ee.Join.saveFirst('cmask').apply(
-            primary=s2_raw, secondary=s2_prob,
-            condition=ee.Filter.equals(leftField='system:index', rightField='system:index')
-        )
-    ).map(lambda img: (ee.Image(img)
-                       .updateMask(ee.Image(img.get('cmask')).select('probability').lt(20))
-                       .divide(10000)
-                       .copyProperties(img, ['system:time_start'])))
+    # Fast cloud-masked Sentinel-2 using QA60 and low cloud cover threshold
+    s2_col = (ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED')
+              .filterBounds(buf250)
+              .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', 20)))
+
+    def _mask_s2(img):
+        qa = img.select('QA60')
+        cloud_bit_mask = 1 << 10
+        cirrus_bit_mask = 1 << 11
+        mask = qa.bitwiseAnd(cloud_bit_mask).eq(0).And(qa.bitwiseAnd(cirrus_bit_mask).eq(0))
+        return img.updateMask(mask).divide(10000).copyProperties(img, ['system:time_start'])
+
+    s2 = s2_col.map(_mask_s2)
 
     s2_pre   = s2.filterDate(evt_s.advance(-30,'day'), evt_s.advance(-1,'day')).median().clip(buf250)
     s2_post  = s2.filterDate(evt_e.advance(1,'day'),  evt_e.advance(30,'day')).median().clip(buf250)
@@ -193,7 +193,7 @@ def get_validation_stats(cyclone_name: str) -> dict:
     def _count(img):
         res = img.reduceRegion(
             reducer=ee.Reducer.sum(), geometry=buf250,
-            scale=100, maxPixels=1e13, tileScale=16, bestEffort=True
+            scale=1000, maxPixels=1e13, tileScale=16, bestEffort=True
         )
         return ee.Number(ee.Algorithms.If(res.values().get(0), res.values().get(0), 0))
 
@@ -219,18 +219,18 @@ def get_validation_stats(cyclone_name: str) -> dict:
     # Veg agreement overall
     veg_res = t['veg_agree'].reduceRegion(
         reducer=ee.Reducer.mean(), geometry=buf250,
-        scale=100, maxPixels=1e13, tileScale=16, bestEffort=True
+        scale=1000, maxPixels=1e13, tileScale=16, bestEffort=True
     ).getInfo()
     veg_agree_pct = round((veg_res.get('VegAgreement', 0) or 0) * 100, 1)
 
     # District-level flood accuracy (precision proxy: fraction of SAR floods confirmed by optical)
     districts = ee.FeatureCollection('FAO/GAUL/2015/level2')
     dist_tp   = t['tp_img'].rename('tp').reduceRegions(
-        collection=districts.filterBounds(buf250), reducer=ee.Reducer.sum(), scale=100, tileScale=16)
+        collection=districts.filterBounds(buf250), reducer=ee.Reducer.sum(), scale=1000, tileScale=16)
     dist_fp   = t['fp_img'].rename('fp').reduceRegions(
-        collection=districts.filterBounds(buf250), reducer=ee.Reducer.sum(), scale=100, tileScale=16)
+        collection=districts.filterBounds(buf250), reducer=ee.Reducer.sum(), scale=1000, tileScale=16)
     dist_fn   = t['fn_img'].rename('fn').reduceRegions(
-        collection=districts.filterBounds(buf250), reducer=ee.Reducer.sum(), scale=100, tileScale=16)
+        collection=districts.filterBounds(buf250), reducer=ee.Reducer.sum(), scale=1000, tileScale=16)
 
     # Join all three
     j1  = ee.Join.saveFirst('fp_feat').apply(dist_tp, dist_fp,   ee.Filter.equals('ADM2_CODE','ADM2_CODE'))

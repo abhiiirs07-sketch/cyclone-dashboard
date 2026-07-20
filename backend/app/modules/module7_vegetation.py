@@ -33,21 +33,19 @@ def _build_veg(cyclone_name: str) -> dict:
     post_start = evt_e.advance(1,   'day')
     post_end   = evt_e.advance(30,  'day')
 
-    # Cloud-masked Sentinel-2 via S2 Cloud Probability join
-    s2_raw  = (ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED')
-               .filterBounds(buf250)
-               .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', 60)))
-    s2_prob = ee.ImageCollection('COPERNICUS/S2_CLOUD_PROBABILITY').filterBounds(buf250)
+    # Fast cloud-masked Sentinel-2 using QA60 and low cloud cover threshold
+    s2_col = (ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED')
+              .filterBounds(buf250)
+              .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', 20)))
 
-    s2 = ee.ImageCollection(
-        ee.Join.saveFirst('cmask').apply(
-            primary=s2_raw, secondary=s2_prob,
-            condition=ee.Filter.equals(leftField='system:index', rightField='system:index')
-        )
-    ).map(lambda img: (ee.Image(img)
-                       .updateMask(ee.Image(img.get('cmask')).select('probability').lt(20))
-                       .divide(10000)
-                       .copyProperties(img, ['system:time_start'])))
+    def _mask_s2(img):
+        qa = img.select('QA60')
+        cloud_bit_mask = 1 << 10
+        cirrus_bit_mask = 1 << 11
+        mask = qa.bitwiseAnd(cloud_bit_mask).eq(0).And(qa.bitwiseAnd(cirrus_bit_mask).eq(0))
+        return img.updateMask(mask).divide(10000).copyProperties(img, ['system:time_start'])
+
+    s2 = s2_col.map(_mask_s2)
 
     pre_s2  = _add_indices(s2.filterDate(pre_start,  pre_end).median().clip(buf250))
     post_s2 = _add_indices(s2.filterDate(post_start, post_end).median().clip(buf250))

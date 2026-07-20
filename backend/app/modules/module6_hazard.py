@@ -37,15 +37,11 @@ def _build_hazard(cyclone_name: str) -> dict:
     elev_risk  = ee.Image(1).subtract(dem.divide(30)).clamp(0, 1).rename('ElevationRisk')
     slope_risk = ee.Image(1).subtract(slope.divide(20)).clamp(0, 1).rename('SlopeRisk')
 
-    # Sea / coastline / distance
-    gsw       = ee.Image('JRC/GSW1_4/GlobalSurfaceWater').select('occurrence')
-    sea_water = (gsw.gte(90).clip(hazard_area).selfMask()
-                    .connectedPixelCount(500, True).gte(500).selfMask())
-    coastline = sea_water.focal_max(1).neq(sea_water.focal_min(1)).selfMask()
-
-    coast_dist = (coastline.remap([1], [0], 1).unmask(1).clip(hazard_area)
-                  .fastDistanceTransform(512).sqrt().multiply(30).divide(1000)
-                  .rename('DistanceToCoast').clip(hazard_area))
+    # Fast distance to coast using USDOS LSIB Simple 2017 boundary
+    coast_dist = (ee.Image().paint(ee.FeatureCollection('USDOS/LSIB_SIMPLE/2017'), 0)
+                  .fastDistanceTransform().sqrt()
+                  .multiply(ee.Image.pixelArea().sqrt())
+                  .divide(1000).rename('DistanceToCoast').clip(hazard_area))
 
     coastal_zone = coast_dist.lte(40).selfMask()
     coast_risk   = coast_dist.expression('exp(-d / 20)', {'d': coast_dist}).rename('CoastRisk')
@@ -95,7 +91,6 @@ def _build_hazard(cyclone_name: str) -> dict:
     flood = (sar_diff.gt(1.25)
              .updateMask(perm_water.Not())
              .updateMask(slope_mask)
-             .connectedPixelCount(8, True).gte(4)
              .selfMask())
 
     flood_risk   = flood.unmask(0).toFloat().clip(hazard_area).rename('FloodRisk')

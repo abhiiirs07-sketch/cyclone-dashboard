@@ -62,25 +62,24 @@ def _build_lulc(cyclone_name: str) -> dict:
     flood_mask  = (sar_diff.gt(1.25)
                    .updateMask(perm_water.Not())
                    .updateMask(slope_mask)
-                   .connectedPixelCount(8, True).gte(4)
                    .selfMask())
 
     # Re-derive vegetation damage mask (dNDVI < -0.2)
     evt_s = ee.Date(dates['evtS'])
     evt_e = ee.Date(dates['evtE'])
-    s2_raw = (ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED')
+    # Fast cloud-masked Sentinel-2 using QA60 and low cloud cover threshold
+    s2_col = (ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED')
               .filterBounds(buf250)
-              .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', 60)))
-    s2_prob = ee.ImageCollection('COPERNICUS/S2_CLOUD_PROBABILITY').filterBounds(buf250)
-    s2 = ee.ImageCollection(
-        ee.Join.saveFirst('cmask').apply(
-            primary=s2_raw, secondary=s2_prob,
-            condition=ee.Filter.equals(leftField='system:index', rightField='system:index')
-        )
-    ).map(lambda img: (ee.Image(img)
-                       .updateMask(ee.Image(img.get('cmask')).select('probability').lt(20))
-                       .divide(10000)
-                       .copyProperties(img, ['system:time_start'])))
+              .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', 20)))
+
+    def _mask_s2(img):
+        qa = img.select('QA60')
+        cloud_bit_mask = 1 << 10
+        cirrus_bit_mask = 1 << 11
+        mask = qa.bitwiseAnd(cloud_bit_mask).eq(0).And(qa.bitwiseAnd(cirrus_bit_mask).eq(0))
+        return img.updateMask(mask).divide(10000).copyProperties(img, ['system:time_start'])
+
+    s2 = s2_col.map(_mask_s2)
 
     def _ndvi(img): return img.normalizedDifference(['B8', 'B4']).rename('NDVI')
 
@@ -160,14 +159,14 @@ def get_lulc_stats(cyclone_name: str) -> dict:
     # Total study area km²
     total_area_res = (ee.Image.pixelArea().divide(1e6)
                       .reduceRegion(reducer=ee.Reducer.sum(), geometry=buf250,
-                                    scale=100, maxPixels=1e13, tileScale=16, bestEffort=True))
+                                    scale=1000, maxPixels=1e13, tileScale=16, bestEffort=True))
     total_area = ee.Number(total_area_res.values().get(0)).getInfo()
 
     # Area per LULC class
     lc_area_groups = (ee.Image.pixelArea().addBands(lc)
                       .reduceRegion(
                           reducer=ee.Reducer.sum().group(groupField=1, groupName='class'),
-                          geometry=buf250, scale=100, maxPixels=1e13, tileScale=16, bestEffort=True
+                          geometry=buf250, scale=1000, maxPixels=1e13, tileScale=16, bestEffort=True
                       ).get('groups').getInfo())
 
     # Flooded area per LULC class
@@ -176,7 +175,7 @@ def get_lulc_stats(cyclone_name: str) -> dict:
                          .addBands(lc)
                          .reduceRegion(
                              reducer=ee.Reducer.sum().group(groupField=1, groupName='class'),
-                             geometry=buf250, scale=100, maxPixels=1e13, tileScale=16, bestEffort=True
+                             geometry=buf250, scale=1000, maxPixels=1e13, tileScale=16, bestEffort=True
                          ).get('groups').getInfo())
 
     # Veg-damaged area per LULC class
@@ -185,7 +184,7 @@ def get_lulc_stats(cyclone_name: str) -> dict:
                        .addBands(lc)
                        .reduceRegion(
                            reducer=ee.Reducer.sum().group(groupField=1, groupName='class'),
-                           geometry=buf250, scale=100, maxPixels=1e13, tileScale=16, bestEffort=True
+                           geometry=buf250, scale=1000, maxPixels=1e13, tileScale=16, bestEffort=True
                        ).get('groups').getInfo())
 
     def _groups_to_dict(groups):

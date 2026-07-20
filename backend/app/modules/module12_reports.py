@@ -67,7 +67,7 @@ def get_report_summary(cyclone_name: str) -> dict:
     slope_mask = ee.Terrain.slope(ee.Image('USGS/SRTMGL1_003')).lt(8)
     flood = sar_diff.gt(1.25).updateMask(perm_water.Not()).updateMask(slope_mask).unmask(0)
     flood_area = ee.Image.pixelArea().updateMask(flood).reduceRegion(
-        reducer=ee.Reducer.sum(), geometry=buf250, scale=100, maxPixels=1e11, bestEffort=True
+        reducer=ee.Reducer.sum(), geometry=buf250, scale=1000, maxPixels=1e11, bestEffort=True
     ).getInfo()
 
     # ── M6: Hazard index mean ──────────────────────────────────────────────
@@ -106,7 +106,7 @@ def get_report_summary(cyclone_name: str) -> dict:
     ndvi_post = ls_col.filterDate(evt_e, evt_e.advance(30,'day')).median().clip(buf250).normalizedDifference(['SR_B5','SR_B4'])
     d_ndvi    = ndvi_post.subtract(ndvi_pre)
     veg_dmg_area = ee.Image.pixelArea().updateMask(d_ndvi.lt(-0.1)).reduceRegion(
-        reducer=ee.Reducer.sum(), geometry=buf250, scale=500, maxPixels=1e11, bestEffort=True
+        reducer=ee.Reducer.sum(), geometry=buf250, scale=1000, maxPixels=1e11, bestEffort=True
     ).getInfo()
 
     # ── M9: Population exposed ─────────────────────────────────────────────
@@ -124,7 +124,7 @@ def get_report_summary(cyclone_name: str) -> dict:
     districts = ee.FeatureCollection('FAO/GAUL/2015/level2')
     dist_flood = hazard_idx.reduceRegions(
         collection=districts.filterBounds(buf250),
-        reducer=ee.Reducer.mean(), scale=5000
+        reducer=ee.Reducer.mean(), scale=1000, tileScale=16
     ).filter(ee.Filter.notNull(['mean'])).sort('mean', False).limit(10).select(['ADM2_NAME','mean']).getInfo()
 
     top_districts = [
@@ -222,7 +222,7 @@ def get_export_data(cyclone_name: str) -> dict:
         collection=districts,
         reducer=(ee.Reducer.mean().setOutputs(['hazard_mean'])
                  .combine(ee.Reducer.sum().setOutputs(['flood_px', 'pop_total']), sharedInputs=False)),
-        scale=1000, tileScale=8
+        scale=1000, tileScale=16
     ).filter(ee.Filter.notNull(['hazard_mean'])).sort('hazard_mean', False).limit(30)
 
     rows = dist_stats.select(['ADM2_NAME','ADM1_NAME','hazard_mean','flood_px','pop_total']).getInfo()
