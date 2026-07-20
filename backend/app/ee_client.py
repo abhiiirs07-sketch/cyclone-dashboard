@@ -57,6 +57,9 @@ def ensure_initialized() -> None:
                         f"EE_PRIVATE_KEY_DATA is not a valid JSON string: {e}"
                     ) from e
                 
+                if "private_key" in key_dict and isinstance(key_dict["private_key"], str):
+                    key_dict["private_key"] = key_dict["private_key"].replace("\\n", "\n")
+                
                 # ee.ServiceAccountCredentials expects key_data parameter to be a JSON string or dict (if supported by google-auth)
                 # In google-auth, ServiceAccountCredentials can accept key_data as JSON string.
                 credentials = ee.ServiceAccountCredentials(sa_email, key_data=json.dumps(key_dict))

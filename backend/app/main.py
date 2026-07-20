@@ -49,8 +49,8 @@ app.add_middleware(
 CACHE_DIR = Path(__file__).parent / "cache"
 CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
-# Layer caches expire after 12 hours (GEE MapIDs expire in ~24h)
-LAYER_TTL = 12 * 3600
+# Layer caches expire after 1.5 hours (GEE MapIDs typically expire in ~2 hours)
+LAYER_TTL = int(1.5 * 3600)
 
 
 def _cache_path(endpoint: str, cyclone_name: str) -> Path:
