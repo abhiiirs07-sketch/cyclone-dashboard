@@ -239,26 +239,10 @@ def get_track_stats(cyclone_name: str) -> dict:
     end_s      = ee.String(last_p.get('ISO_TIME')).replace(' ', 'T').cat('Z')
     dur_hr     = ee.Date(end_s).difference(ee.Date(start_s), 'hour')
 
-    track_stats = ee.Dictionary({
-        'max_wind_kt':  max_wind,
-        'min_pres_hpa': min_pres,
-        'length_km':    track_len_km,
-        'duration_hr':  dur_hr,
-        'category':     _category_label(max_wind),
-        'start_time':   start_s,
-        'end_time':     end_s,
-    }).getInfo()
-
     # Corridor areas
     buf50  = landfall.buffer(50_000).intersection(india_geom, ee.ErrorMargin(500))
     buf100 = landfall.buffer(100_000).intersection(india_geom, ee.ErrorMargin(500))
     buf250 = landfall.buffer(250_000).intersection(india_geom, ee.ErrorMargin(500))
-
-    corridor_stats = ee.Dictionary({
-        'surge_50km_km2':        ee.Number(buf50.area(500)).divide(1e6),
-        'multihazard_100km_km2': ee.Number(buf100.area(500)).divide(1e6),
-        'flood_250km_km2':       ee.Number(buf250.area(500)).divide(1e6),
-    }).getInfo()
 
     # Rainfall footprint
     chirps   = ee.ImageCollection('UCSB-CHG/CHIRPS/DAILY').filterBounds(buf250)
@@ -281,8 +265,33 @@ def get_track_stats(cyclone_name: str) -> dict:
         scale=10000, tileScale=16
     ).filter(ee.Filter.notNull(['max']))
 
-    top20_info = dist_rain.sort('max', False).limit(20).select(['ADM2_NAME', 'mean', 'max']).getInfo()
-    state_info = state_rain.select(['ADM1_NAME', 'mean', 'max']).getInfo()
+    # Combine all GEE calculations into a single batch call for fast response (<3s)
+    batch_dict = ee.Dictionary({
+        'track': ee.Dictionary({
+            'max_wind_kt':  max_wind,
+            'min_pres_hpa': min_pres,
+            'duration_hr':  dur_hr,
+            'category':     _category_label(max_wind),
+            'start_time':   start_s,
+            'end_time':     end_s,
+        }),
+        'corridors': ee.Dictionary({
+            'surge_50km_km2':        ee.Number(buf50.area(500)).divide(1e6),
+            'multihazard_100km_km2': ee.Number(buf100.area(500)).divide(1e6),
+            'flood_250km_km2':       ee.Number(buf250.area(500)).divide(1e6),
+        }),
+        'top20_rain': dist_rain.sort('max', False).limit(20).select(['ADM2_NAME', 'mean', 'max']),
+        'state_rain': state_rain.select(['ADM1_NAME', 'mean', 'max']),
+    })
+
+    results = batch_dict.getInfo()
+
+    track_stats    = results.get('track', {})
+    track_stats['length_km'] = track_len_km
+
+    corridor_stats = results.get('corridors', {})
+    top20_info     = results.get('top20_rain', {})
+    state_info     = results.get('state_rain', {})
 
     def _feat_to_dict(fc_info, name_key):
         return [
