@@ -12,7 +12,7 @@ Slow → get_multihazard_stats()    ~5 min (district risk table + overall summar
 """
 
 import ee
-from app.data.cyclone_db import CYCLONE_DB, CYCLONE_DATES
+from app.data.cyclone_db import CYCLONE_DB, CYCLONE_DATES, CYCLONE_GEE_LOOKUP
 
 
 # ── Weights for composite index ────────────────────────────────────────────
@@ -34,29 +34,10 @@ def _build_multihazard(cyclone_name: str) -> dict:
     india     = countries.filter(ee.Filter.eq('ADM0_NAME', 'India'))
     buf250    = landfall.buffer(250_000).intersection(india.geometry(), ee.ErrorMargin(100))
 
-    # ── Component 1: Flood risk (SAR-derived binary mask → 0/1) ────────────
-    s1 = (ee.ImageCollection('COPERNICUS/S1_GRD')
-          .filterBounds(buf250)
-          .filter(ee.Filter.eq('instrumentMode', 'IW'))
-          .filter(ee.Filter.listContains('transmitterReceiverPolarisation', 'VV')))
-
-    def _lee(img, size=5):
-        b    = img.bandNames().get(0)
-        m    = img.focal_mean(size, 'square', 'pixels')
-        v    = img.subtract(m).pow(2).focal_mean(size, 'square', 'pixels')
-        nv   = m.pow(2).multiply(0.25)
-        w    = v.subtract(nv).max(0).divide(v.max(1e-9))
-        return m.add(w.multiply(img.subtract(m))).rename([b])
-
-    pre_vv  = _lee(s1.filterDate(dates['preS'],  dates['preE']).mosaic().select('VV').clip(buf250))
-    post_vv = _lee(s1.filterDate(dates['postS'], dates['postE']).mosaic().select('VV').clip(buf250))
-    sar_diff = pre_vv.subtract(post_vv)
-
-    perm_water = ee.Image('JRC/GSW1_4/GlobalSurfaceWater').select('occurrence').gt(90)
-    slope_mask = ee.Terrain.slope(ee.Image('USGS/SRTMGL1_003')).lt(8)
-    flood_binary = (sar_diff.gt(1.25)
-                    .updateMask(perm_water.Not())
-                    .updateMask(slope_mask))
+    # Reuse optimized, orbit-matched flood mask from Module 5
+    from app.modules.module5_flood import _build_sar_fast
+    sar = _build_sar_fast(cyclone_name)
+    flood_binary = sar['flood']
     # Smooth flood risk 0-1 using distance transform
     flood_risk = flood_binary.unmask(0).focal_mean(3, 'circle', 'pixels').rename('floodRisk')
 
@@ -71,9 +52,12 @@ def _build_multihazard(cyclone_name: str) -> dict:
     evt_rain     = (ee.ImageCollection('UCSB-CHG/CHIRPS/DAILY')
                     .filterDate(dates['evtS'], dates['evtE'])
                     .filterBounds(buf250).sum().clip(buf250))
-    rain_max     = ee.Number(evt_rain.reduceRegion(
-        reducer=ee.Reducer.max(), geometry=buf250, scale=5000, maxPixels=1e9, bestEffort=True
-    ).values().get(0))
+    if cyclone_name in CYCLONE_GEE_LOOKUP:
+        rain_max = ee.Number(CYCLONE_GEE_LOOKUP[cyclone_name]['rain_max'])
+    else:
+        rain_max = ee.Number(evt_rain.reduceRegion(
+            reducer=ee.Reducer.max(), geometry=buf250, scale=5000, maxPixels=1e9, bestEffort=True
+        ).values().get(0))
     rain_risk    = evt_rain.divide(rain_max).rename('rainRisk')
     event_factor = rain_risk.multiply(0.6).add(base_coastal.multiply(0.4))
     surge_idx    = base_coastal.multiply(event_factor).pow(0.5)
@@ -91,26 +75,10 @@ def _build_multihazard(cyclone_name: str) -> dict:
 
     hazard_idx = surge_idx.multiply(0.55).add(pop_norm.multiply(0.25)).add(lc_risk.multiply(0.20))
 
-    # ── Component 3: Vegetation damage (dNDVI normalised -0.5→0 = 0→1) ────
-    evt_s = ee.Date(dates['evtS'])
-    evt_e = ee.Date(dates['evtE'])
-    # Fast cloud-masked Sentinel-2 using QA60 and low cloud cover threshold
-    s2_col = (ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED')
-              .filterBounds(buf250)
-              .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', 20)))
-
-    def _mask_s2(img):
-        qa = img.select('QA60')
-        cloud_bit_mask = 1 << 10
-        cirrus_bit_mask = 1 << 11
-        mask = qa.bitwiseAnd(cloud_bit_mask).eq(0).And(qa.bitwiseAnd(cirrus_bit_mask).eq(0))
-        return img.updateMask(mask).divide(10000).copyProperties(img, ['system:time_start'])
-
-    s2 = s2_col.map(_mask_s2)
-
-    pre_ndvi  = s2.filterDate(evt_s.advance(-30,'day'), evt_s.advance(-1,'day')).median().clip(buf250).normalizedDifference(['B8','B4'])
-    post_ndvi = s2.filterDate(evt_e.advance(1,'day'),  evt_e.advance(30,'day')).median().clip(buf250).normalizedDifference(['B8','B4'])
-    d_ndvi    = post_ndvi.subtract(pre_ndvi)
+    # Reuse optimized vegetation damage mask and dNDVI from Module 7
+    from app.modules.module7_vegetation import _build_veg
+    veg = _build_veg(cyclone_name)
+    d_ndvi = veg['d_ndvi']
     # Normalise: clamp -0.5 to 0, then flip so 0=no damage, 1=total loss
     veg_risk  = d_ndvi.clamp(-0.5, 0).multiply(-2).rename('vegRisk')
 

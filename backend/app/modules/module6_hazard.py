@@ -6,7 +6,7 @@ Slow → get_hazard_stats()    — full statistics + district/state hazard table
 """
 
 import ee
-from app.data.cyclone_db import CYCLONE_DB, CYCLONE_DATES
+from app.data.cyclone_db import CYCLONE_DB, CYCLONE_DATES, CYCLONE_GEE_LOOKUP
 
 
 # ---------------------------------------------------------------------------
@@ -55,43 +55,24 @@ def _build_hazard(cyclone_name: str) -> dict:
     chirps    = ee.ImageCollection('UCSB-CHG/CHIRPS/DAILY').filterBounds(hazard_area)
     rain_evt  = chirps.filterDate(dates['evtS'], ee.Date(dates['evtE']).advance(1, 'day')).sum()
 
-    rain_p95_res = rain_evt.reduceRegion(
-        reducer=ee.Reducer.percentile([95]),
-        geometry=hazard_area, scale=1000, bestEffort=True, tileScale=16, maxPixels=1e13
-    )
-    rain_p95 = ee.Number(ee.Algorithms.If(
-        rain_p95_res.values().size().gt(0),
-        rain_p95_res.values().get(0), 100
-    ))
+    if cyclone_name in CYCLONE_GEE_LOOKUP:
+        rain_p95 = ee.Number(CYCLONE_GEE_LOOKUP[cyclone_name]['rain_p95'])
+    else:
+        rain_p95_res = rain_evt.reduceRegion(
+            reducer=ee.Reducer.percentile([95]),
+            geometry=hazard_area, scale=1000, bestEffort=True, tileScale=16, maxPixels=1e13
+        )
+        rain_p95 = ee.Number(ee.Algorithms.If(
+            rain_p95_res.values().size().gt(0),
+            rain_p95_res.values().get(0), 100
+        ))
 
     rain_risk  = rain_evt.divide(rain_p95).clamp(0, 1).clip(hazard_area).rename('RainRisk')
 
-    # Re-derive flood from SAR for the event factor (simple 1.25 dB threshold)
-    s1_base = (ee.ImageCollection('COPERNICUS/S1_GRD')
-               .filterBounds(hazard_area)
-               .filter(ee.Filter.eq('instrumentMode', 'IW'))
-               .filter(ee.Filter.listContains('transmitterReceiverPolarisation', 'VV')))
-
-    def _lee(img, size=5):
-        b  = img.bandNames().get(0)
-        mean = img.focal_mean(size, 'square', 'pixels')
-        var_ = img.subtract(mean).pow(2).focal_mean(size, 'square', 'pixels')
-        noise_var = mean.pow(2).multiply(0.25)
-        w = var_.subtract(noise_var).max(0).divide(var_.max(1e-9))
-        return mean.add(w.multiply(img.subtract(mean))).rename([b])
-
-    s1_pre  = s1_base.filterDate(dates['preS'],  dates['preE']).sort('system:time_start')
-    s1_post = s1_base.filterDate(dates['postS'], dates['postE']).sort('system:time_start')
-    pre_f   = _lee(s1_pre.mosaic().select('VV').clip(hazard_area))
-    post_f  = _lee(s1_post.mosaic().select('VV').clip(hazard_area))
-    sar_diff = pre_f.subtract(post_f).rename('SARdiff')
-
-    perm_water = ee.Image('JRC/GSW1_4/GlobalSurfaceWater').select('occurrence').gt(90)
-    slope_mask = ee.Terrain.slope(ee.Image('USGS/SRTMGL1_003')).lt(8)
-    flood = (sar_diff.gt(1.25)
-             .updateMask(perm_water.Not())
-             .updateMask(slope_mask)
-             .selfMask())
+    # Reuse optimized, orbit-matched flood mask from Module 5
+    from app.modules.module5_flood import _build_sar_fast
+    sar = _build_sar_fast(cyclone_name)
+    flood = sar['flood']
 
     flood_risk   = flood.unmask(0).toFloat().clip(hazard_area).rename('FloodRisk')
     event_factor = rain_risk.multiply(0.50).add(flood_risk.multiply(0.50)).rename('EventFactor')
@@ -104,14 +85,17 @@ def _build_hazard(cyclone_name: str) -> dict:
             .filter(ee.Filter.eq('country', 'IND')).mosaic().clip(hazard_area))
     lc   = ee.ImageCollection('ESA/WorldCover/v200').first().select('Map').clip(hazard_area)
 
-    pop_p95_res = wpop.reduceRegion(
-        reducer=ee.Reducer.percentile([95]),
-        geometry=hazard_area, scale=1000, bestEffort=True, tileScale=16, maxPixels=1e13
-    )
-    pop_p95 = ee.Number(ee.Algorithms.If(
-        pop_p95_res.values().size().gt(0),
-        pop_p95_res.values().get(0), 100
-    ))
+    if cyclone_name in CYCLONE_GEE_LOOKUP:
+        pop_p95 = ee.Number(CYCLONE_GEE_LOOKUP[cyclone_name]['pop_p95'])
+    else:
+        pop_p95_res = wpop.reduceRegion(
+            reducer=ee.Reducer.percentile([95]),
+            geometry=hazard_area, scale=1000, bestEffort=True, tileScale=16, maxPixels=1e13
+        )
+        pop_p95 = ee.Number(ee.Algorithms.If(
+            pop_p95_res.values().size().gt(0),
+            pop_p95_res.values().get(0), 100
+        ))
 
     pop_risk = wpop.clip(hazard_area).divide(pop_p95).clamp(0, 1).rename('PopulationRisk')
     lc_risk  = lc.remap(

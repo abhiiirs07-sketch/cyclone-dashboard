@@ -33,24 +33,19 @@ def _add_orbit_key(img: ee.Image) -> ee.Image:
         .cat(ee.Number(img.get('relativeOrbitNumber_start')).format()))
 
 
-def _get_s1_window(base_col: ee.ImageCollection, start: str, end: str,
-                   extra_days: int = 5) -> ee.ImageCollection:
-    """Get S1 images with progressively wider windows."""
+def _get_s1_window_py(base_col: ee.ImageCollection, start: str, end: str) -> ee.ImageCollection:
+    """Get S1 images with progressively wider windows, resolved in Python."""
     d0 = ee.Date(start)
-    for extra in range(0, extra_days + 1):
-        d1 = ee.Date(end).advance(extra, 'day')
-        col = base_col.filterDate(d0, d1)
-        # We can't call .size().getInfo() here (server-side); use conditional
-    # Server-side: pick the smallest window that has ≥1 image
     w0 = base_col.filterDate(d0, ee.Date(end).advance(1, 'day'))
+    if int(w0.size().getInfo()) >= 1:
+        return w0
     w1 = base_col.filterDate(d0, ee.Date(end).advance(3, 'day'))
+    if int(w1.size().getInfo()) >= 1:
+        return w1
     w2 = base_col.filterDate(d0, ee.Date(end).advance(5, 'day'))
-    w3 = base_col.filterDate(d0, ee.Date(end).advance(8, 'day'))
-    return ee.ImageCollection(
-        ee.Algorithms.If(w0.size().gte(1), w0,
-        ee.Algorithms.If(w1.size().gte(1), w1,
-        ee.Algorithms.If(w2.size().gte(1), w2, w3)))
-    )
+    if int(w2.size().getInfo()) >= 1:
+        return w2
+    return base_col.filterDate(d0, ee.Date(end).advance(8, 'day'))
 
 
 # ---------------------------------------------------------------------------
@@ -77,26 +72,21 @@ def _build_sar_fast(cyclone_name: str) -> dict:
         .filter(ee.Filter.listContains('transmitterReceiverPolarisation', 'VV'))
     )
 
-    s1_pre_all  = _get_s1_window(s1_base, dates['preS'],  dates['preE'],  5).map(_add_orbit_key)
-    s1_post_all = _get_s1_window(s1_base, dates['postS'], dates['postE'], 5).map(_add_orbit_key)
+    s1_pre_all  = _get_s1_window_py(s1_base, dates['preS'],  dates['preE']).map(_add_orbit_key)
+    s1_post_all = _get_s1_window_py(s1_base, dates['postS'], dates['postE']).map(_add_orbit_key)
 
-    # Match by common orbit path
-    pre_keys    = ee.List(s1_pre_all.aggregate_array('orbitKey')).distinct()
-    post_keys   = ee.List(s1_post_all.aggregate_array('orbitKey')).distinct()
-    common_keys = pre_keys.filter(ee.Filter.inList('item', post_keys))
-    have_common = common_keys.size().gt(0)
-    chosen_key  = ee.Algorithms.If(have_common, common_keys.get(0), pre_keys.get(0))
+    # Match by common orbit path in Python to keep GEE graph 100% clean
+    pre_keys = s1_pre_all.aggregate_array('orbitKey').distinct().getInfo() or []
+    post_keys = s1_post_all.aggregate_array('orbitKey').distinct().getInfo() or []
+    common_keys = [k for k in pre_keys if k in post_keys]
 
-    s1_pre  = ee.ImageCollection(ee.Algorithms.If(
-        have_common,
-        s1_pre_all.filter(ee.Filter.eq('orbitKey', chosen_key)),
-        s1_pre_all
-    ))
-    s1_post = ee.ImageCollection(ee.Algorithms.If(
-        have_common,
-        s1_post_all.filter(ee.Filter.eq('orbitKey', chosen_key)),
-        s1_post_all
-    ))
+    if common_keys:
+        chosen_key = common_keys[0]
+        s1_pre = s1_pre_all.filter(ee.Filter.eq('orbitKey', chosen_key))
+        s1_post = s1_post_all.filter(ee.Filter.eq('orbitKey', chosen_key))
+    else:
+        s1_pre = s1_pre_all
+        s1_post = s1_post_all
 
     # Lee filtering
     pre_vv  = s1_pre.mosaic().select('VV').clip(buf250)

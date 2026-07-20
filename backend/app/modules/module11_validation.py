@@ -26,30 +26,10 @@ def _build_validation(cyclone_name: str) -> dict:
     india     = countries.filter(ee.Filter.eq('ADM0_NAME', 'India'))
     buf250    = landfall.buffer(250_000).intersection(india.geometry(), ee.ErrorMargin(100))
 
-    # ── SAR flood mask (prediction) ────────────────────────────────────────
-    s1 = (ee.ImageCollection('COPERNICUS/S1_GRD')
-          .filterBounds(buf250)
-          .filter(ee.Filter.eq('instrumentMode', 'IW'))
-          .filter(ee.Filter.listContains('transmitterReceiverPolarisation', 'VV')))
-
-    def _lee(img, size=5):
-        b   = img.bandNames().get(0)
-        m   = img.focal_mean(size, 'square', 'pixels')
-        v   = img.subtract(m).pow(2).focal_mean(size, 'square', 'pixels')
-        nv  = m.pow(2).multiply(0.25)
-        w   = v.subtract(nv).max(0).divide(v.max(1e-9))
-        return m.add(w.multiply(img.subtract(m))).rename([b])
-
-    pre_vv  = _lee(s1.filterDate(dates['preS'],  dates['preE']).mosaic().select('VV').clip(buf250))
-    post_vv = _lee(s1.filterDate(dates['postS'], dates['postE']).mosaic().select('VV').clip(buf250))
-    sar_diff = pre_vv.subtract(post_vv)
-
-    perm_water = ee.Image('JRC/GSW1_4/GlobalSurfaceWater').select('occurrence').gt(90)
-    slope_mask = ee.Terrain.slope(ee.Image('USGS/SRTMGL1_003')).lt(8)
-    sar_flood  = (sar_diff.gt(1.25)
-                  .updateMask(perm_water.Not())
-                  .updateMask(slope_mask)
-                  .unmask(0).rename('SAR_Flood'))
+    # Reuse optimized, orbit-matched flood mask from Module 5
+    from app.modules.module5_flood import _build_sar_fast
+    sar = _build_sar_fast(cyclone_name)
+    sar_flood = sar['flood'].unmask(0).rename('SAR_Flood')
 
     # ── Optical reference: Landsat-8/9 MNDWI post-event ───────────────────
     l8l9 = (ee.ImageCollection('LANDSAT/LC08/C02/T1_L2')
@@ -108,28 +88,11 @@ def _build_validation(cyclone_name: str) -> dict:
     # Landsat veg damage mask (< -0.1 threshold for L8 which has lower variability)
     ls_veg_dmg = ls_dndvi.lt(-0.1).unmask(0).rename('LS_VegDmg')
 
-    # S-2 dNDVI from M7 (re-derive for comparison)
-    evt_s = ee.Date(dates['evtS'])
-    evt_e = ee.Date(dates['evtE'])
-    # Fast cloud-masked Sentinel-2 using QA60 and low cloud cover threshold
-    s2_col = (ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED')
-              .filterBounds(buf250)
-              .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', 20)))
-
-    def _mask_s2(img):
-        qa = img.select('QA60')
-        cloud_bit_mask = 1 << 10
-        cirrus_bit_mask = 1 << 11
-        mask = qa.bitwiseAnd(cloud_bit_mask).eq(0).And(qa.bitwiseAnd(cirrus_bit_mask).eq(0))
-        return img.updateMask(mask).divide(10000).copyProperties(img, ['system:time_start'])
-
-    s2 = s2_col.map(_mask_s2)
-
-    s2_pre   = s2.filterDate(evt_s.advance(-30,'day'), evt_s.advance(-1,'day')).median().clip(buf250)
-    s2_post  = s2.filterDate(evt_e.advance(1,'day'),  evt_e.advance(30,'day')).median().clip(buf250)
-    s2_dndvi = s2_post.normalizedDifference(['B8','B4']).subtract(
-                s2_pre.normalizedDifference(['B8','B4'])).rename('S2_dNDVI')
-    s2_veg_dmg = s2_dndvi.lt(-0.2).unmask(0).rename('S2_VegDmg')
+    # Reuse optimized vegetation damage mask and dNDVI from Module 7
+    from app.modules.module7_vegetation import _build_veg
+    veg = _build_veg(cyclone_name)
+    s2_dndvi = veg['d_ndvi'].rename('S2_dNDVI')
+    s2_veg_dmg = veg['veg_damage'].unmask(0).rename('S2_VegDmg')
 
     # Veg agreement map
     veg_agree = ls_veg_dmg.eq(s2_veg_dmg).rename('VegAgreement')

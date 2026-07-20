@@ -37,56 +37,16 @@ def _build_lulc(cyclone_name: str) -> dict:
     # ESA WorldCover v2 land cover
     lc = ee.ImageCollection('ESA/WorldCover/v200').first().select('Map').clip(buf250)
 
-    # Re-derive flood mask (SAR Sentinel-1)
-    s1 = (ee.ImageCollection('COPERNICUS/S1_GRD')
-          .filterBounds(buf250)
-          .filter(ee.Filter.eq('instrumentMode', 'IW'))
-          .filter(ee.Filter.listContains('transmitterReceiverPolarisation', 'VV')))
+    # Reuse optimized, orbit-matched flood mask from Module 5
+    from app.modules.module5_flood import _build_sar_fast
+    sar = _build_sar_fast(cyclone_name)
+    flood_mask = sar['flood']
 
-    def _lee(img, size=5):
-        b  = img.bandNames().get(0)
-        mean = img.focal_mean(size, 'square', 'pixels')
-        var_ = img.subtract(mean).pow(2).focal_mean(size, 'square', 'pixels')
-        noise_var = mean.pow(2).multiply(0.25)
-        w = var_.subtract(noise_var).max(0).divide(var_.max(1e-9))
-        return mean.add(w.multiply(img.subtract(mean))).rename([b])
-
-    s1_pre  = s1.filterDate(dates['preS'],  dates['preE']).sort('system:time_start')
-    s1_post = s1.filterDate(dates['postS'], dates['postE']).sort('system:time_start')
-    pre_f   = _lee(s1_pre.mosaic().select('VV').clip(buf250))
-    post_f  = _lee(s1_post.mosaic().select('VV').clip(buf250))
-    sar_diff = pre_f.subtract(post_f)
-
-    perm_water  = ee.Image('JRC/GSW1_4/GlobalSurfaceWater').select('occurrence').gt(90)
-    slope_mask  = ee.Terrain.slope(ee.Image('USGS/SRTMGL1_003')).lt(8)
-    flood_mask  = (sar_diff.gt(1.25)
-                   .updateMask(perm_water.Not())
-                   .updateMask(slope_mask)
-                   .selfMask())
-
-    # Re-derive vegetation damage mask (dNDVI < -0.2)
-    evt_s = ee.Date(dates['evtS'])
-    evt_e = ee.Date(dates['evtE'])
-    # Fast cloud-masked Sentinel-2 using QA60 and low cloud cover threshold
-    s2_col = (ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED')
-              .filterBounds(buf250)
-              .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', 20)))
-
-    def _mask_s2(img):
-        qa = img.select('QA60')
-        cloud_bit_mask = 1 << 10
-        cirrus_bit_mask = 1 << 11
-        mask = qa.bitwiseAnd(cloud_bit_mask).eq(0).And(qa.bitwiseAnd(cirrus_bit_mask).eq(0))
-        return img.updateMask(mask).divide(10000).copyProperties(img, ['system:time_start'])
-
-    s2 = s2_col.map(_mask_s2)
-
-    def _ndvi(img): return img.normalizedDifference(['B8', 'B4']).rename('NDVI')
-
-    pre_ndvi  = _ndvi(s2.filterDate(evt_s.advance(-30,'day'), evt_s.advance(-1,'day')).median().clip(buf250))
-    post_ndvi = _ndvi(s2.filterDate(evt_e.advance(1,'day'),  evt_e.advance(30,'day')).median().clip(buf250))
-    d_ndvi    = post_ndvi.subtract(pre_ndvi).rename('dNDVI')
-    veg_damage_mask = d_ndvi.lt(-0.2).selfMask()
+    # Reuse optimized vegetation damage mask from Module 7
+    from app.modules.module7_vegetation import _build_veg
+    veg = _build_veg(cyclone_name)
+    veg_damage_mask = veg['veg_damage']
+    d_ndvi = veg['d_ndvi']
 
     # Composite impact layer: 0=unaffected, 1=flood-only, 2=veg-damage-only, 3=both
     flood_bin  = flood_mask.unmask(0).multiply(1)
