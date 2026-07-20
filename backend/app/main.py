@@ -46,7 +46,7 @@ app.add_middleware(
 
 
 # Local caching configuration
-CACHE_DIR = Path(__file__).parent / "cache"
+CACHE_DIR = Path(__file__).parent / "cache_v2"
 CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
 # Layer caches expire after 1.5 hours (GEE MapIDs typically expire in ~2 hours)
