@@ -115,10 +115,15 @@ def _build_hazard(cyclone_name: str) -> dict:
         {'b': hazard_index}
     ).rename('HazardClass')
 
-    surge_class = surge_index.expression(
-        '(b<=0.2)?1:(b<=0.4)?2:(b<=0.6)?3:(b<=0.8)?4:5',
-        {'b': surge_index}
-    ).rename('SurgeClass')
+    surge_class = (
+        surge_index.expression(
+            '(b>0.4)?5:(b>0.3)?4:(b>0.2)?3:(b>0.1)?2:(b>0)?1:0',
+            {'b': surge_index}
+        )
+        .updateMask(surge_index.gt(0))
+        .selfMask()
+        .rename('SurgeClass')
+    )
 
     return {
         'hazard_area':      hazard_area,

@@ -169,8 +169,9 @@ def get_multihazard_stats(cyclone_name: str) -> dict:
     buf250 = t['buf250']
 
     # District multi-hazard ranking
-    districts = ee.FeatureCollection('FAO/GAUL/2015/level2')
-    dist_mh = t['mh_index'].reduceRegions(
+    districts = ee.FeatureCollection('FAO/GAUL/2015/level2').filter(ee.Filter.eq('ADM0_NAME', 'India'))
+    mh_band   = t['mh_index'].rename('mean')
+    dist_mh   = mh_band.reduceRegions(
         collection=districts.filterBounds(buf250),
         reducer=ee.Reducer.mean(),
         scale=1000, tileScale=16

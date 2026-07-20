@@ -206,7 +206,8 @@ def get_track_stats(cyclone_name: str) -> dict:
     # Track stats
     max_wind   = ee.Number(v_track.aggregate_max('USA_WIND'))
     min_pres   = ee.Number(v_track.aggregate_min('USA_PRES'))
-    track_geom = v_track.geometry()
+    coords     = v_track.geometry().coordinates()
+    track_geom = ee.Geometry.LineString(coords)
     track_len  = track_geom.length(maxError=500).divide(1000)
 
     first_p    = ee.Feature(v_track.sort('ISO_TIME').first())
@@ -244,7 +245,7 @@ def get_track_stats(cyclone_name: str) -> dict:
     evt_rain = chirps.filterDate(dates['evtS'], ee.Date(dates['evtE']).advance(1, 'day'))
     rain_fp  = evt_rain.sum().rename('RainfallFootprint')
 
-    districts  = ee.FeatureCollection('FAO/GAUL/2015/level2')
+    districts  = ee.FeatureCollection('FAO/GAUL/2015/level2').filter(ee.Filter.eq('ADM0_NAME', 'India'))
     india_st   = (ee.FeatureCollection('FAO/GAUL/2015/level1')
                   .filter(ee.Filter.eq('ADM0_NAME', 'India')))
 
