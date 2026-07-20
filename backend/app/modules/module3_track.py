@@ -248,13 +248,15 @@ def get_track_stats(cyclone_name: str) -> dict:
                   .filter(ee.Filter.eq('ADM0_NAME', 'India'))
                   .filterBounds(landfall.buffer(200_000)))
 
-    dist_rain = rain_fp.reduceRegions(
+    rain_band = rain_fp.rename('mean')
+
+    dist_rain = rain_band.reduceRegions(
         collection=districts,
         reducer=ee.Reducer.mean().combine(reducer2=ee.Reducer.max(), sharedInputs=True),
         scale=25000, tileScale=16
     ).filter(ee.Filter.notNull(['mean']))
 
-    state_rain = rain_fp.reduceRegions(
+    state_rain = rain_band.reduceRegions(
         collection=india_st,
         reducer=ee.Reducer.mean().combine(reducer2=ee.Reducer.max(), sharedInputs=True),
         scale=25000, tileScale=16
