@@ -249,18 +249,21 @@ def get_track_stats(cyclone_name: str) -> dict:
     evt_rain = chirps.filterDate(dates['evtS'], ee.Date(dates['evtE']).advance(1, 'day'))
     rain_fp  = evt_rain.sum().rename('RainfallFootprint')
 
-    districts  = ee.FeatureCollection('FAO/GAUL/2015/level2').filter(ee.Filter.eq('ADM0_NAME', 'India'))
+    districts  = (ee.FeatureCollection('FAO/GAUL/2015/level2')
+                  .filter(ee.Filter.eq('ADM0_NAME', 'India'))
+                  .filterBounds(landfall.buffer(150_000)))
     india_st   = (ee.FeatureCollection('FAO/GAUL/2015/level1')
-                  .filter(ee.Filter.eq('ADM0_NAME', 'India')))
+                  .filter(ee.Filter.eq('ADM0_NAME', 'India'))
+                  .filterBounds(landfall.buffer(200_000)))
 
     dist_rain = rain_fp.reduceRegions(
-        collection=districts.filterBounds(buf250),
+        collection=districts,
         reducer=ee.Reducer.mean().combine(reducer2=ee.Reducer.max(), sharedInputs=True),
         scale=25000, tileScale=16
     ).filter(ee.Filter.notNull(['mean']))
 
     state_rain = rain_fp.reduceRegions(
-        collection=india_st.filterBounds(buf250),
+        collection=india_st,
         reducer=ee.Reducer.mean().combine(reducer2=ee.Reducer.max(), sharedInputs=True),
         scale=25000, tileScale=16
     ).filter(ee.Filter.notNull(['max']))
