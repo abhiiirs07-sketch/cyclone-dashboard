@@ -163,6 +163,19 @@ def health():
         return {"status": "degraded", "earthEngine": "not configured", "detail": str(e)}
 
 
+@app.get("/api/test-gee")
+def test_gee():
+    try:
+        ensure_initialized()
+        import ee
+        res = ee.Image(1).getInfo()
+        return {"status": "success", "info": res}
+    except Exception as e:
+        import traceback
+        return {"status": "error", "exception": str(e), "traceback": traceback.format_exc()}
+
+
+
 @app.get("/api/cyclones")
 def list_cyclones():
     return [
