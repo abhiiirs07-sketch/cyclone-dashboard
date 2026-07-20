@@ -42,32 +42,11 @@ def _build_pop(cyclone_name: str) -> dict:
     sar = _build_sar_fast(cyclone_name)
     flood_mask = sar['flood']
 
-    # -----------------------------------------------------------------
-    # Hazard index (re-derived, composite from M6)
-    # -----------------------------------------------------------------
-    coast_dist  = (ee.Image().paint(
-        ee.FeatureCollection('USDOS/LSIB_SIMPLE/2017'), 0
-    ).fastDistanceTransform().sqrt()
-     .multiply(ee.Image.pixelArea().sqrt())
-     .divide(1000).rename('coastDist').clip(buf250))
-
-    base_coastal = coast_dist.subtract(5).divide(250).clamp(0, 1).multiply(-1).add(1)
-    evt_rain     = (ee.ImageCollection('UCSB-CHG/CHIRPS/DAILY')
-                    .filterDate(dates['evtS'], dates['evtE'])
-                    .filterBounds(buf250)
-                    .sum().clip(buf250))
-    if cyclone_name in CYCLONE_GEE_LOOKUP:
-        rain_max = ee.Number(CYCLONE_GEE_LOOKUP[cyclone_name]['rain_max'])
-    else:
-        rain_max = ee.Number(evt_rain.reduceRegion(
-            reducer=ee.Reducer.max(), geometry=buf250, scale=5000, maxPixels=1e9, bestEffort=True
-        ).values().get(0))
-    rain_risk    = evt_rain.divide(rain_max).rename('rainRisk')
-    event_factor = rain_risk.multiply(0.6).add(base_coastal.multiply(0.4))
-    surge_index  = base_coastal.multiply(event_factor).pow(0.5)
-
-    pop_norm     = pop_density.divide(5000).clamp(0, 1)
-    hazard_index = surge_index.multiply(0.55).add(pop_norm.multiply(0.25)).add(rain_risk.multiply(0.20))
+    # Reuse canonical composite hazard index from Module 6
+    from app.modules.module6_hazard import _build_hazard
+    haz          = _build_hazard(cyclone_name)
+    hazard_index = haz['hazard_index']
+    hazard_class = haz['hazard_class']
 
     # Reuse optimized vegetation damage mask from Module 7
     from app.modules.module7_vegetation import _build_veg
@@ -79,9 +58,8 @@ def _build_pop(cyclone_name: str) -> dict:
     # -----------------------------------------------------------------
     # Population in flooded areas
     pop_flooded   = pop_count.updateMask(flood_mask)
-    # Population in high-hazard zones (top 30% hazard)
-    hazard_thresh = hazard_index.gt(0.6)
-    pop_high_haz  = pop_count.updateMask(hazard_thresh)
+    # Population in high & very high hazard zones (classes 4 and 5)
+    pop_high_haz  = pop_count.updateMask(hazard_class.gte(4))
     # Population with vegetation damage
     pop_veg_dmg   = pop_count.updateMask(veg_mask)
     # Composite vulnerability: pop density × hazard
@@ -92,6 +70,7 @@ def _build_pop(cyclone_name: str) -> dict:
         'pop_count':    pop_count,
         'pop_density':  pop_density,
         'hazard_index': hazard_index,
+        'hazard_class': hazard_class,
         'flood_mask':   flood_mask,
         'veg_mask':     veg_mask,
         'pop_flooded':  pop_flooded,
@@ -148,13 +127,18 @@ def get_pop_stats(cyclone_name: str) -> dict:
     if cyclone_name not in CYCLONE_DB:
         raise ValueError(f"Unknown cyclone '{cyclone_name}'")
 
+    cyclone   = CYCLONE_DB[cyclone_name]
+    landfall  = ee.Geometry.Point([cyclone['lon'], cyclone['lat']])
+
     t      = _build_pop(cyclone_name)
     buf250 = t['buf250']
+    h_class = t['hazard_class']
+    pop_cnt = t['pop_count']
 
     def _sum_pop(img):
         res = img.reduceRegion(
             reducer=ee.Reducer.sum(), geometry=buf250,
-            scale=1000, maxPixels=1e13, tileScale=16, bestEffort=True
+            scale=2500, maxPixels=1e13, tileScale=16, bestEffort=True
         )
         val = res.values().get(0)
         return ee.Number(ee.Algorithms.If(val, val, 0))
@@ -162,22 +146,27 @@ def get_pop_stats(cyclone_name: str) -> dict:
     def _max_pop(img):
         res = img.reduceRegion(
             reducer=ee.Reducer.max(), geometry=buf250,
-            scale=1000, maxPixels=1e13, tileScale=16, bestEffort=True
+            scale=2500, maxPixels=1e13, tileScale=16, bestEffort=True
         )
         val = res.values().get(0)
         return ee.Number(ee.Algorithms.If(val, val, 0))
 
-    # Batch compute
+    # Batch compute including 5 hazard exposure classes
     results = ee.Dictionary({
-        'total_pop':     _sum_pop(t['pop_count']),
+        'total_pop':     _sum_pop(pop_cnt),
         'flooded_pop':   _sum_pop(t['pop_flooded']),
         'high_haz_pop':  _sum_pop(t['pop_high_haz']),
         'veg_dmg_pop':   _sum_pop(t['pop_veg_dmg']),
         'max_density':   _max_pop(t['pop_density']),
         'mean_vuln':     (t['pop_vuln'].reduceRegion(
             reducer=ee.Reducer.mean(), geometry=buf250,
-            scale=1000, maxPixels=1e13, tileScale=16, bestEffort=True
+            scale=2500, maxPixels=1e13, tileScale=16, bestEffort=True
         ).values().get(0)),
+        'pop_c1': _sum_pop(pop_cnt.updateMask(h_class.eq(1))),
+        'pop_c2': _sum_pop(pop_cnt.updateMask(h_class.eq(2))),
+        'pop_c3': _sum_pop(pop_cnt.updateMask(h_class.eq(3))),
+        'pop_c4': _sum_pop(pop_cnt.updateMask(h_class.eq(4))),
+        'pop_c5': _sum_pop(pop_cnt.updateMask(h_class.eq(5))),
     }).getInfo()
 
     total_pop     = results.get('total_pop', 0) or 0
@@ -187,22 +176,28 @@ def get_pop_stats(cyclone_name: str) -> dict:
     max_density   = results.get('max_density', 0) or 0
     mean_vuln     = results.get('mean_vuln', 0) or 0
 
+    pop_c1 = results.get('pop_c1', 0) or 0
+    pop_c2 = results.get('pop_c2', 0) or 0
+    pop_c3 = results.get('pop_c3', 0) or 0
+    pop_c4 = results.get('pop_c4', 0) or 0
+    pop_c5 = results.get('pop_c5', 0) or 0
+
     # District-level exposed population
-    districts = ee.FeatureCollection('FAO/GAUL/2015/level2')
-    dist_pop = t['pop_count'].reduceRegions(
-        collection=districts.filterBounds(buf250),
-        reducer=ee.Reducer.sum(),
-        scale=1000, tileScale=16
-    ).filter(ee.Filter.notNull(['sum']))
+    districts = (ee.FeatureCollection('FAO/GAUL/2015/level2')
+                 .filter(ee.Filter.eq('ADM0_NAME', 'India'))
+                 .filterBounds(landfall.buffer(150_000)))
 
-    dist_flooded = t['pop_flooded'].reduceRegions(
-        collection=districts.filterBounds(buf250),
+    dist_pop = pop_cnt.rename('sum').reduceRegions(
+        collection=districts,
         reducer=ee.Reducer.sum(),
-        scale=1000, tileScale=16
-    ).filter(ee.Filter.notNull(['sum']))
+        scale=2500, tileScale=16
+    ).filter(ee.Filter.notNull(['sum'])).sort('sum', False).limit(15).select(['ADM2_NAME','sum'], retainGeometry=False).toList(15).getInfo() or []
 
-    top15_total   = dist_pop.sort('sum', False).limit(15).select(['ADM2_NAME','sum']).getInfo()
-    top15_flooded = dist_flooded.sort('sum', False).limit(10).select(['ADM2_NAME','sum']).getInfo()
+    dist_flooded = t['pop_flooded'].rename('sum').reduceRegions(
+        collection=districts,
+        reducer=ee.Reducer.sum(),
+        scale=2500, tileScale=16
+    ).filter(ee.Filter.notNull(['sum'])).sort('sum', False).limit(10).select(['ADM2_NAME','sum'], retainGeometry=False).toList(10).getInfo() or []
 
     return {
         'summary': {
@@ -215,12 +210,21 @@ def get_pop_stats(cyclone_name: str) -> dict:
             'max_density_km2': round(max_density, 0),
             'mean_vuln':       round(mean_vuln, 1),
         },
+        'hazard_exposure': {
+            'very_high': round(pop_c5),
+            'high':      round(pop_c4),
+            'moderate':  round(pop_c3),
+            'low':       round(pop_c2),
+            'very_low':  round(pop_c1),
+        },
         'districts_total':   [
-            {'name': f['properties'].get('ADM2_NAME','?'), 'pop': round(f['properties'].get('sum', 0) or 0)}
-            for f in top15_total['features']
+            {'name': f.get('properties', {}).get('ADM2_NAME','?'), 'pop': round(f.get('properties', {}).get('sum', 0) or 0)}
+            for f in dist_pop
+            if isinstance(f, dict) and 'properties' in f
         ],
         'districts_flooded': [
-            {'name': f['properties'].get('ADM2_NAME','?'), 'pop': round(f['properties'].get('sum', 0) or 0)}
-            for f in top15_flooded['features']
+            {'name': f.get('properties', {}).get('ADM2_NAME','?'), 'pop': round(f.get('properties', {}).get('sum', 0) or 0)}
+            for f in dist_flooded
+            if isinstance(f, dict) and 'properties' in f
         ],
     }

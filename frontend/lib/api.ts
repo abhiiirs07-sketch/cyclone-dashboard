@@ -538,6 +538,13 @@ export interface PopStatsResponse {
     max_density_km2: number;
     mean_vuln:       number;
   };
+  hazard_exposure?: {
+    very_high: number;
+    high:      number;
+    moderate:  number;
+    low:       number;
+    very_low:  number;
+  };
   districts_total:   Array<{ name: string; pop: number }>;
   districts_flooded: Array<{ name: string; pop: number }>;
 }

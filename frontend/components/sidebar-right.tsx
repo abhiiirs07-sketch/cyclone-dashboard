@@ -140,7 +140,7 @@ export function SidebarRight({
           <div>
             <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)]">Meteorology (GEE)</p>
             <div className="grid grid-cols-2 gap-2">
-              <MetricCard label="Peak Wind"       value={fmt(meteorologyStats.stats.wind_max, 1)}        unit="m/s" />
+              <MetricCard label="ERA5 Mean Surface Wind" value={fmt(meteorologyStats.stats.wind_max, 1)} unit="m/s" />
               <MetricCard label="Mean Temp"       value={fmt(meteorologyStats.stats.temp_mean, 1)}       unit="°C" />
               <MetricCard label="Min Pressure"    value={fmt(meteorologyStats.stats.pres_min, 0)}        unit="hPa" />
               <MetricCard label="Mean Humidity"   value={fmt(meteorologyStats.stats.humidity_mean, 0)}   unit="%" />
@@ -201,7 +201,7 @@ export function SidebarRight({
               <MetricCard label="ΔNDVI Mean"     value={fmt(vegStats.stats.dndvi_mean, 3)}                           unit="" />
               <MetricCard label="Forest Damage"  value={fmt(vegStats.stats['Forest Damage'], 0)}                    unit="km²" />
               <MetricCard label="Crop Damage"    value={fmt(vegStats.stats['Crop Damage'], 0)}                      unit="km²" />
-              <MetricCard label="Severe Damage"  value={fmt(vegStats.stats['Severe Damage'], 0)}                    unit="km²" />
+              <MetricCard label="Severe Damage"  value={fmt(vegStats.stats['Severe Damage'] || 0, 0, '0')}          unit="km²" />
               <MetricCard label="General Damage" value={fmt(vegStats.stats['General Damage'], 0)}                   unit="km²" />
             </div>
           </div>
@@ -230,13 +230,21 @@ export function SidebarRight({
         {popStats?.summary && (
           <div className="mt-3">
             <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-orange-400">Population Exposure (GPW v4)</p>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-2 mb-2">
               <MetricCard label="Total Pop"    value={fmt((popStats.summary.total_pop ?? 0) / 1e6, 2)}     unit="M" />
               <MetricCard label="Flooded Pop"  value={fmt((popStats.summary.flooded_pop ?? 0) / 1e3, 1)}   unit="K" />
               <MetricCard label="High Hazard"  value={fmt((popStats.summary.high_haz_pop ?? 0) / 1e3, 1)}  unit="K" />
               <MetricCard label="Veg Damage"   value={fmt((popStats.summary.veg_dmg_pop ?? 0) / 1e3, 1)}   unit="K" />
-              <MetricCard label="% Flooded"    value={fmt(popStats.summary.pct_flooded, 1)}            unit="%" />
-              <MetricCard label="% High Haz"   value={fmt(popStats.summary.pct_high_haz, 1)}           unit="%" />
+            </div>
+
+            {/* 5-Level Hazard Population Breakdown */}
+            <div className="rounded border border-[var(--border-subtle)] p-2 text-[10px] space-y-1">
+              <p className="font-semibold text-[var(--text-secondary)]">Hazard Population Exposure</p>
+              <div className="flex justify-between"><span className="text-red-400 font-medium">Very High Hazard</span><span className="font-mono">{fmt((popStats.hazard_exposure?.very_high ?? 0) / 1e3, 1)} K</span></div>
+              <div className="flex justify-between"><span className="text-orange-400 font-medium">High Hazard</span><span className="font-mono">{fmt((popStats.hazard_exposure?.high ?? 0) / 1e3, 1)} K</span></div>
+              <div className="flex justify-between"><span className="text-yellow-400 font-medium">Moderate Hazard</span><span className="font-mono">{fmt((popStats.hazard_exposure?.moderate ?? 0) / 1e3, 1)} K</span></div>
+              <div className="flex justify-between"><span className="text-green-400 font-medium">Low Hazard</span><span className="font-mono">{fmt((popStats.hazard_exposure?.low ?? 0) / 1e3, 1)} K</span></div>
+              <div className="flex justify-between"><span className="text-emerald-400 font-medium">Very Low Hazard</span><span className="font-mono">{fmt((popStats.hazard_exposure?.very_low ?? 0) / 1e3, 1)} K</span></div>
             </div>
           </div>
         )}
@@ -430,7 +438,74 @@ export function SidebarRight({
       </Section>
 
       <Section title="Alerts">
-        <EmptyNote>No hazard classification yet — Module 6 will populate this.</EmptyNote>
+        {(() => {
+          const alerts: Array<{ type: 'danger' | 'warning' | 'info'; title: string; desc: string }> = [];
+
+          if (meteorologyStats?.stats?.mean_rain && meteorologyStats.stats.mean_rain > 30) {
+            alerts.push({
+              type: 'warning',
+              title: 'Heavy Rainfall Warning',
+              desc: `Event mean rainfall is ${meteorologyStats.stats.mean_rain.toFixed(1)} mm (${fmt(meteorologyStats.stats.heavy_rain_area_km2, 0)} km² >100mm).`,
+            });
+          }
+
+          if (floodStats?.stats?.flood_km2 && floodStats.stats.flood_km2 > 50) {
+            alerts.push({
+              type: 'danger',
+              title: 'SAR Flood Alert',
+              desc: `${fmt(floodStats.stats.flood_km2, 0)} km² total inundated area detected via Sentinel-1 SAR.`,
+            });
+          }
+
+          if (hazardStats?.surge?.max && hazardStats.surge.max > 0.1) {
+            alerts.push({
+              type: 'danger',
+              title: 'Storm Surge Warning',
+              desc: `Coastal surge index reaches peak of ${fmt(hazardStats.surge.max, 3)} in coastal zone.`,
+            });
+          }
+
+          if (vegStats?.stats?.total_damage_km2 && vegStats.stats.total_damage_km2 > 50) {
+            alerts.push({
+              type: 'warning',
+              title: 'Vegetation Canopy Loss',
+              desc: `${fmt(vegStats.stats.total_damage_km2, 0)} km² vegetation damage mapped via Sentinel-2 ΔNDVI.`,
+            });
+          }
+
+          if (mhStats?.district_ranking && mhStats.district_ranking.length > 0) {
+            const topDist = mhStats.district_ranking[0];
+            alerts.push({
+              type: 'danger',
+              title: `Critical District: ${topDist.name}`,
+              desc: `${topDist.name} ranked #1 highest multi-hazard risk district (Score: ${fmt(topDist.score, 3)}).`,
+            });
+          }
+
+          if (alerts.length === 0) {
+            return <EmptyNote>No active critical warnings for current selection.</EmptyNote>;
+          }
+
+          return (
+            <div className="space-y-1.5">
+              {alerts.map((a, idx) => (
+                <div
+                  key={idx}
+                  className={`rounded border p-2 text-[10px] ${
+                    a.type === 'danger'
+                      ? 'border-red-500/50 bg-red-950/30 text-red-300'
+                      : a.type === 'warning'
+                      ? 'border-amber-500/50 bg-amber-950/30 text-amber-300'
+                      : 'border-cyan-500/50 bg-cyan-950/30 text-cyan-300'
+                  }`}
+                >
+                  <p className="font-semibold text-xs mb-0.5">⚠️ {a.title}</p>
+                  <p className="leading-snug">{a.desc}</p>
+                </div>
+              ))}
+            </div>
+          );
+        })()}
       </Section>
 
       {/* ── Module 12: Reports & Export ── */}

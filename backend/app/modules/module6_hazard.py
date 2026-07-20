@@ -38,9 +38,10 @@ def _build_hazard(cyclone_name: str) -> dict:
     elev_risk  = ee.Image(1).subtract(dem.divide(30)).clamp(0, 1).rename('ElevationRisk')
     slope_risk = ee.Image(1).subtract(slope.divide(20)).clamp(0, 1).rename('SlopeRisk')
 
-    # Fast distance to coast using USDOS LSIB Simple 2017 boundary
-    coast_dist = (ee.Image().paint(ee.FeatureCollection('USDOS/LSIB_SIMPLE/2017'), 0)
-                  .fastDistanceTransform().sqrt()
+    # Fast distance to coast using ETOPO1 ocean bedrock mask
+    etopo = ee.Image('NOAA/NGDC/ETOPO1').select('bedrock')
+    ocean = etopo.lte(0)
+    coast_dist = (ocean.fastDistanceTransform().sqrt()
                   .multiply(ee.Image.pixelArea().sqrt())
                   .divide(1000).rename('DistanceToCoast').clip(hazard_area))
 
@@ -231,18 +232,32 @@ def get_hazard_stats(cyclone_name: str) -> dict:
         geometry=hazard_area, scale=1000, maxPixels=1e13, tileScale=16, bestEffort=True
     ).getInfo()
 
-    # Surge index stats
-    surge_stats = surge_index.reduceRegion(
+    cyclone  = CYCLONE_DB[cyclone_name]
+    landfall = ee.Geometry.Point([cyclone['lon'], cyclone['lat']])
+
+    # Active surge index stats (non-zero surge pixels in coastal zone)
+    surge_active = t['surge_display'].updateMask(t['surge_display'].gt(0))
+    surge_stats  = surge_active.reduceRegion(
         reducer=ee.Reducer.mean().combine(ee.Reducer.max(), sharedInputs=True),
-        geometry=hazard_area, scale=1000, maxPixels=1e13, tileScale=16, bestEffort=True
+        geometry=hazard_area, scale=2500, maxPixels=1e13, tileScale=16, bestEffort=True
     ).getInfo()
 
+    surge_area_res = ee.Image.pixelArea().divide(1e6).updateMask(t['surge_display'].gt(0)).reduceRegion(
+        reducer=ee.Reducer.sum(), geometry=hazard_area, scale=2500, maxPixels=1e13, tileScale=16, bestEffort=True
+    )
+    surge_area_val = surge_area_res.values().get(0)
+    surge_area_km2 = ee.Number(ee.Algorithms.If(surge_area_val, surge_area_val, 0)).getInfo()
+
     # District-level hazard ranking
-    districts = ee.FeatureCollection('FAO/GAUL/2015/level2')
-    dist_hazard = hazard_index.reduceRegions(
-        collection=districts.filterBounds(hazard_area),
-        reducer=ee.Reducer.mean().combine(ee.Reducer.max(), sharedInputs=True),
-        scale=1000, tileScale=16
+    districts = (ee.FeatureCollection('FAO/GAUL/2015/level2')
+                 .filter(ee.Filter.eq('ADM0_NAME', 'India'))
+                 .filterBounds(landfall.buffer(150_000)))
+
+    hz_band = hazard_index.rename('mean')
+    dist_hazard = hz_band.reduceRegions(
+        collection=districts,
+        reducer=ee.Reducer.mean(),
+        scale=2500, tileScale=16
     ).filter(ee.Filter.notNull(['mean'])).map(lambda f: f.set({
         'HazardIndex': ee.Number(f.get('mean')),
         'HazardLevel': ee.Algorithms.If(
@@ -252,19 +267,18 @@ def get_hazard_stats(cyclone_name: str) -> dict:
             ee.Algorithms.If(ee.Number(f.get('mean')).lt(0.80), 'High', 'Very High'))))
     }))
 
-    top20 = dist_hazard.sort('HazardIndex', False).limit(20)
-    top20_info = top20.select(['ADM2_NAME', 'HazardIndex', 'HazardLevel']).getInfo()
+    top20_feats = dist_hazard.sort('HazardIndex', False).limit(20).select(['ADM2_NAME', 'HazardIndex', 'HazardLevel'], retainGeometry=False).toList(20).getInfo() or []
 
     # State-level hazard
-    india_states = ee.FeatureCollection('FAO/GAUL/2015/level1').filter(
-        ee.Filter.eq('ADM0_NAME', 'India')
-    )
-    state_hazard = hazard_index.reduceRegions(
-        collection=india_states.filterBounds(hazard_area),
+    india_states = (ee.FeatureCollection('FAO/GAUL/2015/level1')
+                    .filter(ee.Filter.eq('ADM0_NAME', 'India'))
+                    .filterBounds(landfall.buffer(200_000)))
+    state_hazard = hz_band.reduceRegions(
+        collection=india_states,
         reducer=ee.Reducer.mean().combine(ee.Reducer.max(), sharedInputs=True),
-        scale=2000, tileScale=16
+        scale=5000, tileScale=16
     ).filter(ee.Filter.notNull(['mean']))
-    state_info = state_hazard.select(['ADM1_NAME', 'mean', 'max']).getInfo()
+    state_feats = state_hazard.select(['ADM1_NAME', 'mean', 'max'], retainGeometry=False).toList(10).getInfo() or []
 
     def _feat_list(fc_info, name_key, fields):
         return [
@@ -285,23 +299,26 @@ def get_hazard_stats(cyclone_name: str) -> dict:
             'std_dev': round(hz_stats.get('HazardIndex_stdDev', 0) or 0, 4),
         },
         'surge': {
-            'mean': round(surge_stats.get('SurgeIndex_mean', 0) or 0, 4),
-            'max':  round(surge_stats.get('SurgeIndex_max',  0) or 0, 4),
+            'mean':     round(surge_stats.get('SurgeIndex_mean', 0) or 0, 4),
+            'max':      round(surge_stats.get('SurgeIndex_max',  0) or 0, 4),
+            'area_km2': round(surge_area_km2, 1),
         },
         'districtHazard': [
             {
-                'name':  f['properties'].get('ADM2_NAME', '?'),
-                'index': round(f['properties'].get('HazardIndex', 0) or 0, 3),
-                'level': f['properties'].get('HazardLevel', '?'),
+                'name':  f.get('properties', {}).get('ADM2_NAME', '?'),
+                'index': round(f.get('properties', {}).get('HazardIndex', 0) or 0, 3),
+                'level': f.get('properties', {}).get('HazardLevel', '?'),
             }
-            for f in top20_info['features']
+            for f in top20_feats
+            if isinstance(f, dict) and 'properties' in f
         ],
         'stateHazard': [
             {
-                'name': f['properties'].get('ADM1_NAME', '?'),
-                'mean': round(f['properties'].get('mean', 0) or 0, 3),
-                'max':  round(f['properties'].get('max',  0) or 0, 3),
+                'name': f.get('properties', {}).get('ADM1_NAME', '?'),
+                'mean': round(f.get('properties', {}).get('mean', 0) or 0, 3),
+                'max':  round(f.get('properties', {}).get('max',  0) or 0, 3),
             }
-            for f in state_info['features']
+            for f in state_feats
+            if isinstance(f, dict) and 'properties' in f
         ],
     }
