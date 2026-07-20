@@ -256,13 +256,13 @@ def get_track_stats(cyclone_name: str) -> dict:
     dist_rain = rain_fp.reduceRegions(
         collection=districts.filterBounds(buf250),
         reducer=ee.Reducer.mean().combine(reducer2=ee.Reducer.max(), sharedInputs=True),
-        scale=10000, tileScale=16
+        scale=25000, tileScale=16
     ).filter(ee.Filter.notNull(['mean']))
 
     state_rain = rain_fp.reduceRegions(
         collection=india_st.filterBounds(buf250),
         reducer=ee.Reducer.mean().combine(reducer2=ee.Reducer.max(), sharedInputs=True),
-        scale=10000, tileScale=16
+        scale=25000, tileScale=16
     ).filter(ee.Filter.notNull(['max']))
 
     # Combine all GEE calculations into a single batch call for fast response (<3s)
