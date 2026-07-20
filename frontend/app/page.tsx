@@ -1,13 +1,25 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { Header } from '@/components/header';
 import { SidebarLeft } from '@/components/sidebar-left';
 import { SidebarRight } from '@/components/sidebar-right';
 import { BottomPanel } from '@/components/bottom-panel';
-import { MapView } from '@/components/map-view';
 import { TimeSliderPanel } from '@/components/time-slider-panel';
 import type { BasemapId, PhaseId } from '@/lib/map-types';
+
+const MapView = dynamic(
+  () => import('@/components/map-view').then((mod) => mod.MapView),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex flex-1 items-center justify-center bg-[#0d1117] text-cyan-400 font-mono text-xs select-none">
+        <span className="animate-pulse">🗺️ Initializing Interactive Map Engine…</span>
+      </div>
+    ),
+  }
+);
 import {
   useCyclones, useStudyArea,
   useMeteorologyLayers, useMeteorologyStats,
