@@ -33,9 +33,17 @@ def ensure_initialized() -> None:
         return
 
     sa_email = os.environ.get("EE_SERVICE_ACCOUNT")
+    if sa_email:
+        sa_email = sa_email.strip()
     key_file = os.environ.get("EE_PRIVATE_KEY_FILE")
+    if key_file:
+        key_file = key_file.strip()
     key_data = os.environ.get("EE_PRIVATE_KEY_DATA")
+    if key_data:
+        key_data = key_data.strip()
     project = os.environ.get("EE_PROJECT")
+    if project:
+        project = project.strip()
 
     # If service account credentials are provided, use them.
     if sa_email and (key_file or key_data):
@@ -58,7 +66,11 @@ def ensure_initialized() -> None:
                     ) from e
                 
                 if "private_key" in key_dict and isinstance(key_dict["private_key"], str):
-                    key_dict["private_key"] = key_dict["private_key"].replace("\\n", "\n")
+                    key_dict["private_key"] = key_dict["private_key"].replace("\\n", "\n").strip()
+                if "project_id" in key_dict and isinstance(key_dict["project_id"], str):
+                    key_dict["project_id"] = key_dict["project_id"].strip()
+                if "client_email" in key_dict and isinstance(key_dict["client_email"], str):
+                    key_dict["client_email"] = key_dict["client_email"].strip()
                 
                 # ee.ServiceAccountCredentials expects key_data parameter to be a JSON string or dict
                 # In google-auth, ServiceAccountCredentials can accept key_data as JSON string.
@@ -75,6 +87,8 @@ def ensure_initialized() -> None:
     # Try OAuth refresh token if provided
     refresh_token = os.environ.get("EE_REFRESH_TOKEN")
     if refresh_token:
+        refresh_token = refresh_token.strip()
+
         try:
             from google.oauth2.credentials import Credentials
             from google.auth.transport.requests import Request
