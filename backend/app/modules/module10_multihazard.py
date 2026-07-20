@@ -168,16 +168,21 @@ def get_multihazard_stats(cyclone_name: str) -> dict:
     t      = _build_multihazard(cyclone_name)
     buf250 = t['buf250']
 
+    cyclone   = CYCLONE_DB[cyclone_name]
+    landfall  = ee.Geometry.Point([cyclone['lon'], cyclone['lat']])
+
     # District multi-hazard ranking
-    districts = ee.FeatureCollection('FAO/GAUL/2015/level2').filter(ee.Filter.eq('ADM0_NAME', 'India'))
+    districts = (ee.FeatureCollection('FAO/GAUL/2015/level2')
+                 .filter(ee.Filter.eq('ADM0_NAME', 'India'))
+                 .filterBounds(landfall.buffer(150_000)))
     mh_band   = t['mh_index'].rename('mean')
     dist_mh   = mh_band.reduceRegions(
-        collection=districts.filterBounds(buf250),
+        collection=districts,
         reducer=ee.Reducer.mean(),
-        scale=1000, tileScale=16
+        scale=5000, tileScale=16
     ).filter(ee.Filter.notNull(['mean']))
 
-    top20 = dist_mh.sort('mean', False).limit(20).select(['ADM2_NAME', 'mean'])
+    top20_list = dist_mh.sort('mean', False).limit(20).select(['ADM2_NAME', 'mean'], retainGeometry=False).toList(20)
 
     # Group all calculations into a single dictionary
     stats_dict = ee.Dictionary({
@@ -186,19 +191,19 @@ def get_multihazard_stats(cyclone_name: str) -> dict:
                      .combine(ee.Reducer.min(), sharedInputs=True)
                      .combine(ee.Reducer.max(), sharedInputs=True)
                      .combine(ee.Reducer.stdDev(), sharedInputs=True)),
-            geometry=buf250, scale=1000, maxPixels=1e13, tileScale=16, bestEffort=True
+            geometry=buf250, scale=5000, maxPixels=1e13, tileScale=16, bestEffort=True
         ),
         'class_groups': ee.Image.pixelArea().addBands(t['mh_class']).reduceRegion(
             reducer=ee.Reducer.sum().group(groupField=1, groupName='class'),
-            geometry=buf250, scale=1000, maxPixels=1e13, tileScale=16, bestEffort=True
+            geometry=buf250, scale=5000, maxPixels=1e13, tileScale=16, bestEffort=True
         ).get('groups'),
-        'top20': top20
+        'top20': top20_list
     })
 
     results = stats_dict.getInfo()
     idx_stats = results.get('idx_stats', {})
     class_groups = results.get('class_groups') or []
-    top20_info = results.get('top20', {})
+    top20_feats = results.get('top20') or []
 
     class_areas = {}
     for g in (class_groups or []):
@@ -215,12 +220,13 @@ def get_multihazard_stats(cyclone_name: str) -> dict:
 
     district_ranking = [
         {
-            'name':  f['properties'].get('ADM2_NAME', '?'),
-            'score': round(f['properties'].get('mean', 0) or 0, 3),
-            'level': _risk_level(f['properties'].get('mean', 0) or 0),
+            'name':  f.get('properties', {}).get('ADM2_NAME', '?'),
+            'score': round(f.get('properties', {}).get('mean', 0) or 0, 3),
+            'level': _risk_level(f.get('properties', {}).get('mean', 0) or 0),
             'rank':  i + 1,
         }
-        for i, f in enumerate(top20_info.get('features', []))
+        for i, f in enumerate(top20_feats)
+        if isinstance(f, dict) and 'properties' in f
     ]
 
     return {
