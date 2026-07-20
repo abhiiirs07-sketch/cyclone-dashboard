@@ -33,27 +33,12 @@ def _add_orbit_key(img: ee.Image) -> ee.Image:
         .cat(ee.Number(img.get('relativeOrbitNumber_start')).format()))
 
 
-def _get_s1_window_py(base_col: ee.ImageCollection, start: str, end: str) -> ee.ImageCollection:
-    """Get S1 images with progressively wider windows, resolved in Python."""
-    d0 = ee.Date(start)
-    w0 = base_col.filterDate(d0, ee.Date(end).advance(1, 'day'))
-    if int(w0.size().getInfo()) >= 1:
-        return w0
-    w1 = base_col.filterDate(d0, ee.Date(end).advance(3, 'day'))
-    if int(w1.size().getInfo()) >= 1:
-        return w1
-    w2 = base_col.filterDate(d0, ee.Date(end).advance(5, 'day'))
-    if int(w2.size().getInfo()) >= 1:
-        return w2
-    return base_col.filterDate(d0, ee.Date(end).advance(8, 'day'))
-
-
 # ---------------------------------------------------------------------------
-# Shared SAR computation — FAST version (no blocking reduceRegion)
+# Shared SAR computation — FAST version (100% pure GEE, 0 blocking getInfo calls)
 # ---------------------------------------------------------------------------
 
 def _build_sar_fast(cyclone_name: str) -> dict:
-    """Build SAR layers without any blocking reduceRegion calls."""
+    """Build SAR layers cleanly in pure GEE (0 blocking getInfo calls)."""
     cyclone = CYCLONE_DB[cyclone_name]
     dates   = CYCLONE_DATES[cyclone_name]
 
@@ -64,7 +49,7 @@ def _build_sar_fast(cyclone_name: str) -> dict:
     india     = countries.filter(ee.Filter.eq('ADM0_NAME', 'India'))
     buf250    = buf250.intersection(india.geometry(), ee.ErrorMargin(500))
 
-    # S1 scene selection
+    # Base Sentinel-1 GRD collection
     s1_base = (
         ee.ImageCollection('COPERNICUS/S1_GRD')
         .filterBounds(buf250)
@@ -72,33 +57,30 @@ def _build_sar_fast(cyclone_name: str) -> dict:
         .filter(ee.Filter.listContains('transmitterReceiverPolarisation', 'VV'))
     )
 
-    s1_pre_all  = _get_s1_window_py(s1_base, dates['preS'],  dates['preE']).map(_add_orbit_key)
-    s1_post_all = _get_s1_window_py(s1_base, dates['postS'], dates['postE']).map(_add_orbit_key)
+    # Date windows (pre-event and post-event)
+    # 14-day pre window and 14-day post window guarantee S1 scene availability
+    pre_start  = ee.Date(dates['preS']).advance(-14, 'day')
+    pre_end    = dates['preE']
+    post_start = dates['postS']
+    post_end   = ee.Date(dates['postE']).advance(14, 'day')
 
-    # Match by common orbit path in Python to keep GEE graph 100% clean
-    pre_keys = s1_pre_all.aggregate_array('orbitKey').distinct().getInfo() or []
-    post_keys = s1_post_all.aggregate_array('orbitKey').distinct().getInfo() or []
-    common_keys = [k for k in pre_keys if k in post_keys]
+    s1_pre  = s1_base.filterDate(pre_start, pre_end)
+    s1_post = s1_base.filterDate(post_start, post_end)
 
-    if common_keys:
-        chosen_key = common_keys[0]
-        s1_pre = s1_pre_all.filter(ee.Filter.eq('orbitKey', chosen_key))
-        s1_post = s1_post_all.filter(ee.Filter.eq('orbitKey', chosen_key))
-    else:
-        s1_pre = s1_pre_all
-        s1_post = s1_post_all
+    # Mosaic VV backscatter intensity
+    pre_vv  = s1_pre.select('VV').mosaic().clip(buf250)
+    post_vv = s1_post.select('VV').mosaic().clip(buf250)
 
-    # Lee filtering
-    pre_vv  = s1_pre.mosaic().select('VV').clip(buf250)
-    post_vv = s1_post.mosaic().select('VV').clip(buf250)
-    pre_f   = _lee_filter(pre_vv,  5)
-    post_f  = _lee_filter(post_vv, 5)
+    # Lee speckle filter
+    pre_f    = _lee_filter(pre_vv,  5)
+    post_f   = _lee_filter(post_vv, 5)
     sar_diff = pre_f.subtract(post_f).rename('SARdiff')
 
-    # Simple threshold (fast — no Otsu, no connectedPixelCount)
-    perm_water = ee.Image('JRC/GSW1_4/GlobalSurfaceWater').select('occurrence').gt(90)
+    # Water & Slope masks
+    perm_water = ee.Image('JRC/GSW1_4/GlobalSurfaceWater').select('occurrence').gt(80)
     slope_mask = ee.Terrain.slope(ee.Image('USGS/SRTMGL1_003')).lt(8)
 
+    # Flood extent calculation (1.25 dB drop threshold)
     flood_raw = (
         sar_diff.gt(1.25)
         .updateMask(perm_water.Not())
@@ -107,9 +89,8 @@ def _build_sar_fast(cyclone_name: str) -> dict:
         .rename('FloodExtent')
     )
 
-    # Flood depth proxy (no blocking reduceRegion — just use a fixed reference)
+    # DEM-based flood depth proxy
     dem = ee.Image('USGS/SRTMGL1_003').clip(buf250)
-    # Use a simple depth proxy: pixels below 10m that are flooded get depth = 10 - elev
     flood_depth = ee.Image(10).subtract(dem).max(0).updateMask(flood_raw).rename('FloodDepthProxy')
 
     return {

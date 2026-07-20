@@ -33,11 +33,14 @@ def _build_validation(cyclone_name: str) -> dict:
     sar_flood = sar['flood'].unmask(0).rename('SAR_Flood')
 
     # ── Optical reference: Landsat-8/9 MNDWI post-event ───────────────────
+    post_s = dates['postS']
+    post_e = ee.Date(dates['postE']).advance(30, 'day')
+
     l8l9 = (ee.ImageCollection('LANDSAT/LC08/C02/T1_L2')
             .merge(ee.ImageCollection('LANDSAT/LC09/C02/T1_L2'))
             .filterBounds(buf250)
-            .filterDate(dates['postS'], dates['postE'])
-            .filter(ee.Filter.lt('CLOUD_COVER', 30))
+            .filterDate(post_s, post_e)
+            .filter(ee.Filter.lt('CLOUD_COVER', 50))
             .sort('CLOUD_COVER'))
 
     # Landsat SR scale + offset
@@ -69,17 +72,20 @@ def _build_validation(cyclone_name: str) -> dict:
                     .rename('Confusion'))
 
     # ── Vegetation validation: Landsat-8 SWIR2 anomaly ────────────────────
+    pre_s = ee.Date(dates['preS']).advance(-30, 'day')
+    pre_e = dates['preE']
+
     ls_pre  = (ee.ImageCollection('LANDSAT/LC08/C02/T1_L2')
                .merge(ee.ImageCollection('LANDSAT/LC09/C02/T1_L2'))
                .filterBounds(buf250)
-               .filterDate(dates['preS'], dates['preE'])
-               .filter(ee.Filter.lt('CLOUD_COVER', 30))
+               .filterDate(pre_s, pre_e)
+               .filter(ee.Filter.lt('CLOUD_COVER', 50))
                .map(_scale_ls).median().clip(buf250))
     ls_post = (ee.ImageCollection('LANDSAT/LC08/C02/T1_L2')
                .merge(ee.ImageCollection('LANDSAT/LC09/C02/T1_L2'))
                .filterBounds(buf250)
-               .filterDate(dates['postS'], dates['postE'])
-               .filter(ee.Filter.lt('CLOUD_COVER', 30))
+               .filterDate(post_s, post_e)
+               .filter(ee.Filter.lt('CLOUD_COVER', 50))
                .map(_scale_ls).median().clip(buf250))
 
     # Landsat NDVI
