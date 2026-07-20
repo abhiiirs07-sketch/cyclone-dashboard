@@ -14,6 +14,7 @@ Slow → get_validation_stats()    ~5-6 min  (accuracy metrics per district)
 """
 
 import ee
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from app.data.cyclone_db import CYCLONE_DB, CYCLONE_DATES
 
 
@@ -131,13 +132,22 @@ def get_validation_layers(cyclone_name: str) -> dict:
         'vegAgreement':(t['veg_agree'],     {'min': 0, 'max': 1, 'palette': 'FF4500,22C55E'}),
     }
 
-    layers = {}
-    for name, (img, vis) in tile_configs.items():
+    def _get_tile(name_img_vis):
+        name, (img, vis) = name_img_vis
         try:
             mapid = img.getMapId(vis)
-            layers[name] = {'tileUrl': mapid['tile_fetcher'].url_format}
-        except Exception:
-            pass
+            return name, {'tileUrl': mapid['tile_fetcher'].url_format}
+        except Exception as e:
+            print(f'[M11] {name} getMapId failed: {e}')
+            return name, None
+
+    layers = {}
+    with ThreadPoolExecutor(max_workers=len(tile_configs)) as executor:
+        futures = {executor.submit(_get_tile, item): item[0] for item in tile_configs.items()}
+        for future in as_completed(futures):
+            name, result = future.result()
+            if result is not None:
+                layers[name] = result
 
     return {'layers': layers}
 

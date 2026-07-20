@@ -8,6 +8,7 @@ Slow → get_pop_stats()    — exposed population counts + district table ~4-5 
 """
 
 import ee
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from app.data.cyclone_db import CYCLONE_DB, CYCLONE_DATES, CYCLONE_GEE_LOOKUP
 
 
@@ -119,13 +120,22 @@ def get_pop_layers(cyclone_name: str) -> dict:
         'popVegDmg':   (t['pop_veg_dmg'], {'min': 0, 'max': 2000,  'palette': 'F7FCF5,AED9A8,41AE76,006D2C,00441B'}),
     }
 
-    layers = {}
-    for name, (img, vis) in tile_configs.items():
+    def _get_tile(name_img_vis):
+        name, (img, vis) = name_img_vis
         try:
             mapid = img.getMapId(vis)
-            layers[name] = {'tileUrl': mapid['tile_fetcher'].url_format}
-        except Exception:
-            pass
+            return name, {'tileUrl': mapid['tile_fetcher'].url_format}
+        except Exception as e:
+            print(f'[M9] {name} getMapId failed: {e}')
+            return name, None
+
+    layers = {}
+    with ThreadPoolExecutor(max_workers=len(tile_configs)) as executor:
+        futures = {executor.submit(_get_tile, item): item[0] for item in tile_configs.items()}
+        for future in as_completed(futures):
+            name, result = future.result()
+            if result is not None:
+                layers[name] = result
 
     return {'layers': layers}
 

@@ -6,6 +6,7 @@ Slow → get_veg_stats()    — damage class areas + district table (~3-4 min)
 """
 
 import ee
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from app.data.cyclone_db import CYCLONE_DB, CYCLONE_DATES
 
 
@@ -96,13 +97,22 @@ def get_veg_layers(cyclone_name: str) -> dict:
         'damageClass':  (t['damage_class'].selfMask(), {'min': 1, 'max': 4, 'palette': '00441B,78C679,FD8D3C,BD0026'}),
     }
 
-    layers = {}
-    for name, (img, vis) in tile_configs.items():
+    def _get_tile(name_img_vis):
+        name, (img, vis) = name_img_vis
         try:
             mapid = img.getMapId(vis)
-            layers[name] = {'tileUrl': mapid['tile_fetcher'].url_format}
-        except Exception:
-            pass
+            return name, {'tileUrl': mapid['tile_fetcher'].url_format}
+        except Exception as e:
+            print(f'[M7] {name} getMapId failed: {e}')
+            return name, None
+
+    layers = {}
+    with ThreadPoolExecutor(max_workers=len(tile_configs)) as executor:
+        futures = {executor.submit(_get_tile, item): item[0] for item in tile_configs.items()}
+        for future in as_completed(futures):
+            name, result = future.result()
+            if result is not None:
+                layers[name] = result
 
     return {'layers': layers}
 

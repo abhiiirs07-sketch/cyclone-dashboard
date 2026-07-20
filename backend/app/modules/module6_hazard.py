@@ -6,6 +6,7 @@ Slow → get_hazard_stats()    — full statistics + district/state hazard table
 """
 
 import ee
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from app.data.cyclone_db import CYCLONE_DB, CYCLONE_DATES, CYCLONE_GEE_LOOKUP
 
 
@@ -169,13 +170,22 @@ def get_hazard_layers(cyclone_name: str) -> dict:
         'hazardClass':     (t['hazard_class'],     {'min': 1,   'max': 5,   'palette': GREEN_RED}),
     }
 
-    layers = {}
-    for name, (img, vis) in tile_configs.items():
+    def _get_tile(name_img_vis):
+        name, (img, vis) = name_img_vis
         try:
             mapid = img.getMapId(vis)
-            layers[name] = {'tileUrl': mapid['tile_fetcher'].url_format}
-        except Exception:
-            pass  # skip layers that fail (e.g. no coastal pixels)
+            return name, {'tileUrl': mapid['tile_fetcher'].url_format}
+        except Exception as e:
+            print(f'[M6] {name} getMapId failed: {e}')
+            return name, None
+
+    layers = {}
+    with ThreadPoolExecutor(max_workers=len(tile_configs)) as executor:
+        futures = {executor.submit(_get_tile, item): item[0] for item in tile_configs.items()}
+        for future in as_completed(futures):
+            name, result = future.result()
+            if result is not None:
+                layers[name] = result
 
     return {'layers': layers}
 

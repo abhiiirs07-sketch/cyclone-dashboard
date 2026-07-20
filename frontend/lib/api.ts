@@ -124,16 +124,21 @@ export function useStudyArea(cyclone: string | null) {
     queryKey: ['study-area', cyclone],
     queryFn: () => getStudyArea(cyclone as string),
     enabled: cyclone != null,
+    staleTime: Infinity,
+    retry: 3,
+    retryDelay: (attempt) => Math.min(5000 * 2 ** attempt, 60_000), // 5s, 10s, 20s
   });
 }
 
-/** Fast hook — loads map tile URLs in ~5 s */
+/** Fast hook — loads map tile URLs. Retries with backoff on timeout. */
 export function useMeteorologyLayers(cyclone: string | null) {
   return useQuery({
     queryKey: ['meteorology-layers', cyclone],
     queryFn: () => getMeteorologyLayers(cyclone as string),
     enabled: cyclone != null,
     staleTime: Infinity,
+    retry: 3,
+    retryDelay: (attempt) => Math.min(10_000 * 2 ** attempt, 120_000), // 10s, 20s, 40s
   });
 }
 
@@ -207,6 +212,8 @@ export function useTrackLayers(cyclone: string | null) {
     queryFn: () => getTrackLayers(cyclone as string),
     enabled: cyclone != null,
     staleTime: Infinity,
+    retry: 3,
+    retryDelay: (attempt) => Math.min(10_000 * 2 ** attempt, 120_000),
   });
 }
 
@@ -251,6 +258,8 @@ export function useFloodLayers(cyclone: string | null) {
     queryFn: () => getFloodLayers(cyclone as string),
     enabled: cyclone != null,
     staleTime: Infinity,
+    retry: 3,
+    retryDelay: (attempt) => Math.min(10_000 * 2 ** attempt, 120_000),
   });
 }
 
@@ -291,6 +300,8 @@ export function useHazardLayers(cyclone: string | null) {
     queryFn: () => getHazardLayers(cyclone as string),
     enabled: cyclone != null,
     staleTime: Infinity,
+    retry: 3,
+    retryDelay: (attempt) => Math.min(10_000 * 2 ** attempt, 120_000),
   });
 }
 
@@ -336,6 +347,8 @@ export function useVegLayers(cyclone: string | null) {
     queryFn: () => getVegLayers(cyclone as string),
     enabled: cyclone != null,
     staleTime: Infinity,
+    retry: 3,
+    retryDelay: (attempt) => Math.min(10_000 * 2 ** attempt, 120_000),
   });
 }
 
@@ -493,6 +506,8 @@ export function useLulcLayers(cyclone: string | null) {
     queryFn:  () => getLulcLayers(cyclone as string),
     enabled:  cyclone != null,
     staleTime: Infinity,
+    retry: 3,
+    retryDelay: (attempt) => Math.min(10_000 * 2 ** attempt, 120_000),
   });
 }
 
@@ -538,6 +553,8 @@ export function usePopLayers(cyclone: string | null) {
     queryFn:  () => getPopLayers(cyclone as string),
     enabled:  cyclone != null,
     staleTime: Infinity,
+    retry: 3,
+    retryDelay: (attempt) => Math.min(10_000 * 2 ** attempt, 120_000),
   });
 }
 
@@ -585,6 +602,8 @@ export function useMHLayers(cyclone: string | null) {
     queryFn:  () => getMHLayers(cyclone as string),
     enabled:  cyclone != null,
     staleTime: Infinity,
+    retry: 3,
+    retryDelay: (attempt) => Math.min(10_000 * 2 ** attempt, 120_000),
   });
 }
 
@@ -641,6 +660,8 @@ export function useValidationLayers(cyclone: string | null) {
     queryFn:  () => getValidationLayers(cyclone as string),
     enabled:  cyclone != null,
     staleTime: Infinity,
+    retry: 3,
+    retryDelay: (attempt) => Math.min(10_000 * 2 ** attempt, 120_000),
   });
 }
 
