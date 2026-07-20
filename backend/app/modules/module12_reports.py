@@ -55,7 +55,7 @@ def get_report_summary(cyclone_name: str) -> dict:
         geometry=buf250, scale=5000, maxPixels=1e10, bestEffort=True
     ).getInfo()
 
-    # ── M5: SAR flood extent ───────────────────────────────────────────────
+    # ── M5: SAR flood extent, M6: Hazard, M7: Veg, M9: Pop ────────────────────
     from app.modules.module5_flood import _build_sar_fast
     from app.modules.module6_hazard import _build_hazard
     from app.modules.module7_vegetation import _build_veg
@@ -63,45 +63,60 @@ def get_report_summary(cyclone_name: str) -> dict:
 
     sar   = _build_sar_fast(cyclone_name)
     flood = sar['flood']
-    flood_area = ee.Image.pixelArea().updateMask(flood).reduceRegion(
-        reducer=ee.Reducer.sum(), geometry=buf250, scale=1000, maxPixels=1e11, bestEffort=True, tileScale=16
-    ).getInfo()
 
-    # ── M6: Hazard index mean ──────────────────────────────────────────────
     haz = _build_hazard(cyclone_name)
-    hazard_stats = haz['hazard_index'].reduceRegion(
-        reducer=ee.Reducer.mean().combine(ee.Reducer.max(), sharedInputs=True),
-        geometry=buf250, scale=1000, maxPixels=1e11, bestEffort=True, tileScale=16
-    ).getInfo()
+    haz_band = haz['hazard_index'].rename('mean')
 
-    # ── M7: Vegetation damage ─────────────────────────────────────────────
     veg = _build_veg(cyclone_name)
-    veg_dmg_area = ee.Image.pixelArea().updateMask(veg['veg_damage']).reduceRegion(
-        reducer=ee.Reducer.sum(), geometry=buf250, scale=1000, maxPixels=1e11, bestEffort=True, tileScale=16
-    ).getInfo()
 
-    # ── M9: Population exposed ─────────────────────────────────────────────
     pop = (ee.ImageCollection('CIESIN/GPWv411/GPW_Population_Count')
            .filterDate('2020-01-01','2020-12-31').first()
            .select('population_count').clip(buf250))
-    total_pop = pop.reduceRegion(
-        reducer=ee.Reducer.sum(), geometry=buf250, scale=1000, maxPixels=1e11, bestEffort=True, tileScale=16
-    ).getInfo()
-    flooded_pop = pop.updateMask(flood).reduceRegion(
-        reducer=ee.Reducer.sum(), geometry=buf250, scale=1000, maxPixels=1e11, bestEffort=True, tileScale=16
-    ).getInfo()
 
-    # ── Compute district areas for affected districts table ────────────────
     districts = ee.FeatureCollection('FAO/GAUL/2015/level2').filter(ee.Filter.eq('ADM0_NAME', 'India'))
-    haz_band  = haz['hazard_index'].rename('mean')
-    dist_flood = haz_band.reduceRegions(
-        collection=districts.filterBounds(buf250),
-        reducer=ee.Reducer.mean(), scale=1000, tileScale=16
-    ).filter(ee.Filter.notNull(['mean'])).sort('mean', False).limit(10).select(['ADM2_NAME','mean']).getInfo()
+
+    # Batch all 6 reductions into a single GEE call (<3s response)
+    batch_dict = ee.Dictionary({
+        'rain_stats': evt_rain.reduceRegion(
+            reducer=ee.Reducer.mean().combine(ee.Reducer.max(), sharedInputs=True),
+            geometry=buf250, scale=5000, maxPixels=1e10, bestEffort=True, tileScale=16
+        ),
+        'flood_area': ee.Image.pixelArea().updateMask(flood).reduceRegion(
+            reducer=ee.Reducer.sum(), geometry=buf250, scale=2500, maxPixels=1e11, bestEffort=True, tileScale=16
+        ),
+        'hazard_stats': haz['hazard_index'].reduceRegion(
+            reducer=ee.Reducer.mean().combine(ee.Reducer.max(), sharedInputs=True),
+            geometry=buf250, scale=2500, maxPixels=1e11, bestEffort=True, tileScale=16
+        ),
+        'veg_dmg_area': ee.Image.pixelArea().updateMask(veg['veg_damage']).reduceRegion(
+            reducer=ee.Reducer.sum(), geometry=buf250, scale=2500, maxPixels=1e11, bestEffort=True, tileScale=16
+        ),
+        'total_pop': pop.reduceRegion(
+            reducer=ee.Reducer.sum(), geometry=buf250, scale=2500, maxPixels=1e11, bestEffort=True, tileScale=16
+        ),
+        'flooded_pop': pop.updateMask(flood).reduceRegion(
+            reducer=ee.Reducer.sum(), geometry=buf250, scale=2500, maxPixels=1e11, bestEffort=True, tileScale=16
+        ),
+        'dist_flood': haz_band.reduceRegions(
+            collection=districts.filterBounds(buf250),
+            reducer=ee.Reducer.mean(), scale=5000, tileScale=16
+        ).filter(ee.Filter.notNull(['mean'])).sort('mean', False).limit(10).select(['ADM2_NAME','mean'], retainGeometry=False).toList(10)
+    })
+
+    results = batch_dict.getInfo()
+
+    rain_stats   = results.get('rain_stats', {})
+    flood_area   = results.get('flood_area', {})
+    hazard_stats = results.get('hazard_stats', {})
+    veg_dmg_area = results.get('veg_dmg_area', {})
+    total_pop    = results.get('total_pop', {})
+    flooded_pop  = results.get('flooded_pop', {})
+    dist_flood   = results.get('dist_flood', []) or []
 
     top_districts = [
-        {'name': f['properties'].get('ADM2_NAME','?'), 'hazard_mean': round(f['properties'].get('mean', 0) or 0, 3)}
-        for f in dist_flood['features']
+        {'name': f.get('properties', {}).get('ADM2_NAME','?'), 'hazard_mean': round(f.get('properties', {}).get('mean', 0) or 0, 3)}
+        for f in dist_flood
+        if isinstance(f, dict) and 'properties' in f
     ]
 
     # Track stats for category & peak wind
