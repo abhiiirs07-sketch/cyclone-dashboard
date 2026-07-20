@@ -289,13 +289,17 @@ def get_track_stats(cyclone_name: str) -> dict:
     state_info     = results.get('state_rain', {})
 
     def _feat_to_dict(fc_info, name_key):
+        if not isinstance(fc_info, dict):
+            return []
+        features = fc_info.get('features', []) or []
         return [
             {
-                'name': f['properties'].get(name_key, '?'),
-                'mean': round(f['properties'].get('mean', 0) or 0, 1),
-                'max':  round(f['properties'].get('max',  0) or 0, 1),
+                'name': f.get('properties', {}).get(name_key, '?'),
+                'mean': round(f.get('properties', {}).get('mean', 0) or 0, 1),
+                'max':  round(f.get('properties', {}).get('max',  0) or 0, 1),
             }
-            for f in fc_info['features']
+            for f in features
+            if isinstance(f, dict) and 'properties' in f
         ]
 
     return {
