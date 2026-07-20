@@ -156,36 +156,30 @@ def get_lulc_stats(cyclone_name: str) -> dict:
     buf250 = t['buf250']
     lc     = t['lc']
 
-    # Total study area km²
-    total_area_res = (ee.Image.pixelArea().divide(1e6)
-                      .reduceRegion(reducer=ee.Reducer.sum(), geometry=buf250,
-                                    scale=1000, maxPixels=1e13, tileScale=16, bestEffort=True))
-    total_area = ee.Number(total_area_res.values().get(0)).getInfo()
+    # Group computations into one dictionary to do a single round-trip
+    stats_dict = ee.Dictionary({
+        'total_area': ee.Image.pixelArea().divide(1e6).reduceRegion(
+            reducer=ee.Reducer.sum(), geometry=buf250, scale=1000, maxPixels=1e13, tileScale=16, bestEffort=True
+        ).values().get(0),
+        'lc_area_groups': ee.Image.pixelArea().addBands(lc).reduceRegion(
+            reducer=ee.Reducer.sum().group(groupField=1, groupName='class'),
+            geometry=buf250, scale=1000, maxPixels=1e13, tileScale=16, bestEffort=True
+        ).get('groups'),
+        'flood_area_groups': ee.Image.pixelArea().updateMask(t['flood_mask']).addBands(lc).reduceRegion(
+            reducer=ee.Reducer.sum().group(groupField=1, groupName='class'),
+            geometry=buf250, scale=1000, maxPixels=1e13, tileScale=16, bestEffort=True
+        ).get('groups'),
+        'veg_area_groups': ee.Image.pixelArea().updateMask(t['veg_damage_mask']).addBands(lc).reduceRegion(
+            reducer=ee.Reducer.sum().group(groupField=1, groupName='class'),
+            geometry=buf250, scale=1000, maxPixels=1e13, tileScale=16, bestEffort=True
+        ).get('groups')
+    })
 
-    # Area per LULC class
-    lc_area_groups = (ee.Image.pixelArea().addBands(lc)
-                      .reduceRegion(
-                          reducer=ee.Reducer.sum().group(groupField=1, groupName='class'),
-                          geometry=buf250, scale=1000, maxPixels=1e13, tileScale=16, bestEffort=True
-                      ).get('groups').getInfo())
-
-    # Flooded area per LULC class
-    flood_area_groups = (ee.Image.pixelArea()
-                         .updateMask(t['flood_mask'])
-                         .addBands(lc)
-                         .reduceRegion(
-                             reducer=ee.Reducer.sum().group(groupField=1, groupName='class'),
-                             geometry=buf250, scale=1000, maxPixels=1e13, tileScale=16, bestEffort=True
-                         ).get('groups').getInfo())
-
-    # Veg-damaged area per LULC class
-    veg_area_groups = (ee.Image.pixelArea()
-                       .updateMask(t['veg_damage_mask'])
-                       .addBands(lc)
-                       .reduceRegion(
-                           reducer=ee.Reducer.sum().group(groupField=1, groupName='class'),
-                           geometry=buf250, scale=1000, maxPixels=1e13, tileScale=16, bestEffort=True
-                       ).get('groups').getInfo())
+    results = stats_dict.getInfo()
+    total_area = results.get('total_area', 0) or 0
+    lc_area_groups = results.get('lc_area_groups') or []
+    flood_area_groups = results.get('flood_area_groups') or []
+    veg_area_groups = results.get('veg_area_groups') or []
 
     def _groups_to_dict(groups):
         return {int(g['class']): round(g['sum'] / 1e6, 1) for g in (groups or [])}

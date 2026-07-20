@@ -190,28 +190,6 @@ def get_multihazard_stats(cyclone_name: str) -> dict:
     t      = _build_multihazard(cyclone_name)
     buf250 = t['buf250']
 
-    # Overall index stats
-    idx_stats = t['mh_index'].reduceRegion(
-        reducer=(ee.Reducer.mean()
-                 .combine(ee.Reducer.min(), sharedInputs=True)
-                 .combine(ee.Reducer.max(), sharedInputs=True)
-                 .combine(ee.Reducer.stdDev(), sharedInputs=True)),
-        geometry=buf250, scale=1000, maxPixels=1e13, tileScale=16, bestEffort=True
-    ).getInfo()
-
-    # Class area breakdown
-    class_groups = (ee.Image.pixelArea().addBands(t['mh_class'])
-                    .reduceRegion(
-                        reducer=ee.Reducer.sum().group(groupField=1, groupName='class'),
-                        geometry=buf250, scale=1000, maxPixels=1e13, tileScale=16, bestEffort=True
-                    ).get('groups').getInfo())
-
-    class_areas = {}
-    for g in (class_groups or []):
-        cls = int(g.get('class', 0))
-        if 1 <= cls <= 5:
-            class_areas[RISK_LEVELS[cls - 1]] = round(g.get('sum', 0) / 1e6, 1)
-
     # District multi-hazard ranking
     districts = ee.FeatureCollection('FAO/GAUL/2015/level2')
     dist_mh = t['mh_index'].reduceRegions(
@@ -220,7 +198,34 @@ def get_multihazard_stats(cyclone_name: str) -> dict:
         scale=1000, tileScale=16
     ).filter(ee.Filter.notNull(['mean']))
 
-    top20 = dist_mh.sort('mean', False).limit(20).select(['ADM2_NAME', 'mean']).getInfo()
+    top20 = dist_mh.sort('mean', False).limit(20).select(['ADM2_NAME', 'mean'])
+
+    # Group all calculations into a single dictionary
+    stats_dict = ee.Dictionary({
+        'idx_stats': t['mh_index'].reduceRegion(
+            reducer=(ee.Reducer.mean()
+                     .combine(ee.Reducer.min(), sharedInputs=True)
+                     .combine(ee.Reducer.max(), sharedInputs=True)
+                     .combine(ee.Reducer.stdDev(), sharedInputs=True)),
+            geometry=buf250, scale=1000, maxPixels=1e13, tileScale=16, bestEffort=True
+        ),
+        'class_groups': ee.Image.pixelArea().addBands(t['mh_class']).reduceRegion(
+            reducer=ee.Reducer.sum().group(groupField=1, groupName='class'),
+            geometry=buf250, scale=1000, maxPixels=1e13, tileScale=16, bestEffort=True
+        ).get('groups'),
+        'top20': top20
+    })
+
+    results = stats_dict.getInfo()
+    idx_stats = results.get('idx_stats', {})
+    class_groups = results.get('class_groups') or []
+    top20_info = results.get('top20', {})
+
+    class_areas = {}
+    for g in (class_groups or []):
+        cls = int(g.get('class', 0))
+        if 1 <= cls <= 5:
+            class_areas[RISK_LEVELS[cls - 1]] = round(g.get('sum', 0) / 1e6, 1)
 
     def _risk_level(score: float) -> str:
         if score >= 0.80: return 'Very High'
@@ -236,7 +241,7 @@ def get_multihazard_stats(cyclone_name: str) -> dict:
             'level': _risk_level(f['properties'].get('mean', 0) or 0),
             'rank':  i + 1,
         }
-        for i, f in enumerate(top20['features'])
+        for i, f in enumerate(top20_info.get('features', []))
     ]
 
     return {
