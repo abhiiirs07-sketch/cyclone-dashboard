@@ -231,10 +231,10 @@ def get_track_stats(cyclone_name: str) -> dict:
     end_s      = ee.String(last_p.get('ISO_TIME')).replace(' ', 'T').cat('Z')
     dur_hr     = ee.Date(end_s).difference(ee.Date(start_s), 'hour')
 
-    # Corridor areas
-    buf50  = landfall.buffer(50_000).intersection(india_geom, ee.ErrorMargin(500))
-    buf100 = landfall.buffer(100_000).intersection(india_geom, ee.ErrorMargin(500))
-    buf250 = landfall.buffer(250_000).intersection(india_geom, ee.ErrorMargin(500))
+    # Corridor areas (fast circular buffers)
+    buf50  = landfall.buffer(50_000)
+    buf100 = landfall.buffer(100_000)
+    buf250 = landfall.buffer(250_000)
 
     # Rainfall footprint
     chirps   = ee.ImageCollection('UCSB-CHG/CHIRPS/DAILY').filterBounds(buf250)
