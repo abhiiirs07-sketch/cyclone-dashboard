@@ -48,7 +48,7 @@ export default function DashboardPage() {
 
   // Map controls state
   const [basemap, setBasemap]               = useState<BasemapId>('dark');
-  const [rasterOpacity, setRasterOpacity]   = useState(0.85);
+  const [rasterOpacity, setRasterOpacity]   = useState(0.90);
   const [phase, setPhase]                   = useState<PhaseId>('all');
 
   // Animation states (Module 3 track + Module 5 flood)

@@ -56,7 +56,7 @@ export default function DashboardPage() {
   const [selected,      setSelected]      = useState<string | null>(null);
   const [visibleLayers, setVisibleLayers] = useState<Set<string>>(new Set(DEFAULT_VISIBLE_LAYERS));
   const [basemap,       setBasemap]       = useState<BasemapId>('dark');
-  const [rasterOpacity, setRasterOpacity] = useState(0.85);
+  const [rasterOpacity, setRasterOpacity] = useState(0.90);
   const [phase,         setPhase]         = useState<PhaseId>('all');
   const [showLegend,    setShowLegend]    = useState(true);
   const [animFrame,     setAnimFrame]     = useState<number | null>(null);

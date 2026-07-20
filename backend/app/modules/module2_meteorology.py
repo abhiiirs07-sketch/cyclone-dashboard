@@ -43,7 +43,7 @@ def _build_images(cyclone_name: str):
     study_buffer = landfall.buffer(250_000)
     countries = ee.FeatureCollection("FAO/GAUL/2015/level0")
     india = countries.filter(ee.Filter.eq("ADM0_NAME", "India"))
-    clipped_study_area = study_buffer.intersection(india.geometry(), ee.ErrorMargin(100))
+    clipped_study_area = study_buffer.intersection(india.geometry().simplify(2500), ee.ErrorMargin(100))
 
     era5 = ee.ImageCollection("ECMWF/ERA5_LAND/HOURLY").filterBounds(clipped_study_area)
     chirps = ee.ImageCollection("UCSB-CHG/CHIRPS/DAILY").filterBounds(clipped_study_area)
@@ -130,7 +130,7 @@ def get_meteorology_layers(cyclone_name: str) -> dict:
             return name, None
 
     layers = {}
-    with ThreadPoolExecutor(max_workers=7) as executor:
+    with ThreadPoolExecutor(max_workers=2) as executor:
         futures = {executor.submit(_get_tile, item): item[0] for item in tile_configs.items()}
         for future in as_completed(futures):
             name, result = future.result()

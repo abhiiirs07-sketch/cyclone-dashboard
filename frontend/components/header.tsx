@@ -81,9 +81,9 @@ export function Header({
       </button>
 
       <button
-        disabled
-        title="Available once Module 12 (Reports & Export) is built"
-        className="cursor-not-allowed rounded-md border border-[var(--border-subtle)] bg-[var(--surface-2)] p-1.5 text-[var(--text-tertiary)]"
+        onClick={() => window.print()}
+        title="Export Dashboard to PDF / Print"
+        className="rounded-md border border-[var(--border-subtle)] bg-[var(--surface-2)] p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition"
       >
         <Download className="h-4 w-4" />
       </button>

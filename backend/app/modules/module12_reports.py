@@ -32,7 +32,7 @@ def _basic_stats(cyclone_name: str) -> dict:
     landfall = ee.Geometry.Point([cyclone['lon'], cyclone['lat']])
     countries= ee.FeatureCollection('FAO/GAUL/2015/level0')
     india    = countries.filter(ee.Filter.eq('ADM0_NAME', 'India'))
-    buf250   = landfall.buffer(250_000).intersection(india.geometry(), ee.ErrorMargin(100))
+    buf250   = landfall.buffer(250_000).intersection(india.geometry().simplify(2500), ee.ErrorMargin(100))
     return cyclone, dates, buf250
 
 

@@ -23,7 +23,7 @@ def _build_hazard(cyclone_name: str) -> dict:
 
     countries = ee.FeatureCollection('FAO/GAUL/2015/level0')
     india     = countries.filter(ee.Filter.eq('ADM0_NAME', 'India'))
-    india_geom = india.geometry()
+    india_geom = india.geometry().simplify(2500).simplify(2500)
 
     study_area  = buf250_geom.intersection(india_geom, ee.ErrorMargin(100))
     hazard_area = study_area  # same extent in this app
@@ -186,7 +186,7 @@ def get_hazard_layers(cyclone_name: str) -> dict:
             return name, None
 
     layers = {}
-    with ThreadPoolExecutor(max_workers=len(tile_configs)) as executor:
+    with ThreadPoolExecutor(max_workers=2) as executor:
         futures = {executor.submit(_get_tile, item): item[0] for item in tile_configs.items()}
         for future in as_completed(futures):
             name, result = future.result()

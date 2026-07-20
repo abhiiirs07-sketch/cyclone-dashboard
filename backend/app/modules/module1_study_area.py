@@ -42,7 +42,7 @@ def get_study_area(cyclone_name: str) -> dict:
 
     # ---- affected districts / study area / reporting area ----
     affected_districts = india_districts.filterBounds(study_buffer)
-    clipped_study_area = study_buffer.intersection(india.geometry(), ee.ErrorMargin(100))
+    clipped_study_area = study_buffer.intersection(india.geometry().simplify(2500), ee.ErrorMargin(100))
     reporting_area = affected_districts.geometry().dissolve()
 
     # ---- statistics (identical reducers & scale to the source script) ----

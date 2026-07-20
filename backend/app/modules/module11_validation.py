@@ -25,7 +25,7 @@ def _build_validation(cyclone_name: str) -> dict:
     landfall  = ee.Geometry.Point([cyclone['lon'], cyclone['lat']])
     countries = ee.FeatureCollection('FAO/GAUL/2015/level0')
     india     = countries.filter(ee.Filter.eq('ADM0_NAME', 'India'))
-    buf250    = landfall.buffer(250_000).intersection(india.geometry(), ee.ErrorMargin(100))
+    buf250    = landfall.buffer(250_000).intersection(india.geometry().simplify(2500), ee.ErrorMargin(100))
 
     # Reuse optimized, orbit-matched flood mask from Module 5
     from app.modules.module5_flood import _build_sar_fast
@@ -148,7 +148,7 @@ def get_validation_layers(cyclone_name: str) -> dict:
             return name, None
 
     layers = {}
-    with ThreadPoolExecutor(max_workers=len(tile_configs)) as executor:
+    with ThreadPoolExecutor(max_workers=2) as executor:
         futures = {executor.submit(_get_tile, item): item[0] for item in tile_configs.items()}
         for future in as_completed(futures):
             name, result = future.result()

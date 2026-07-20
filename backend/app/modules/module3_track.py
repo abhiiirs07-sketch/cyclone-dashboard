@@ -59,7 +59,7 @@ def _build_track_layers_only(cyclone_name: str) -> dict:
 
     countries  = ee.FeatureCollection('FAO/GAUL/2015/level0')
     india      = countries.filter(ee.Filter.eq('ADM0_NAME', 'India'))
-    india_geom = india.geometry()
+    india_geom = india.geometry().simplify(2500).simplify(2500)
     buf250     = buf250.intersection(india_geom, ee.ErrorMargin(500))
 
     v_track = _get_track_fc(cyclone_name)
@@ -150,7 +150,7 @@ def get_track_layers(cyclone_name: str) -> dict:
     pts_fc = {'type': 'FeatureCollection', 'features': []}
     line_geojson = {'type': 'LineString', 'coordinates': []}
 
-    with ThreadPoolExecutor(max_workers=7) as executor:
+    with ThreadPoolExecutor(max_workers=2) as executor:
         futures = {
             executor.submit(_get_rain_tile): 'rain',
             executor.submit(_get_corridor_tile, 'corridor50km',  t['buf50'],  '00FFFF'): 'c50',
@@ -201,7 +201,7 @@ def get_track_stats(cyclone_name: str) -> dict:
 
     landfall   = ee.Geometry.Point([cyclone['lon'], cyclone['lat']])
     india_geom = (ee.FeatureCollection('FAO/GAUL/2015/level0')
-                  .filter(ee.Filter.eq('ADM0_NAME', 'India')).geometry())
+                  .filter(ee.Filter.eq('ADM0_NAME', 'India')).geometry().simplify(2500))
 
     # Haversine distance calculation in Python for 100% reliable track length
     import math

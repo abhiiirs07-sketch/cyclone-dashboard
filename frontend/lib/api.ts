@@ -379,7 +379,7 @@ export const LAYER_LEGEND: Record<string, LegendEntry> = {
   studyArea:         { label: 'Study Area',         palette: ['#8B5CF6','#8B5CF6'], min: '', max: '' },
   affectedDistricts: { label: 'Affected Districts',  palette: ['#F59E0B','#F59E0B'], min: '', max: '' },
   // M2 Meteorology
-  peakWind:          { label: 'Peak Wind',           palette: ['#FFFFFF','#FFFF00','#FFA500','#FF0000','#800026'], min: 0, max: 30, unit: 'm/s' },
+  peakWind:          { label: 'Mean Surface Wind (ERA5)',           palette: ['#FFFFFF','#FFFF00','#FFA500','#FF0000','#800026'], min: 0, max: 30, unit: 'm/s' },
   tempAnomaly:       { label: 'Temp Anomaly',        palette: ['#053061','#4393C3','#FFFFFF','#D6604D','#67001F'], min: -5, max: 5, unit: '°C' },
   humidity:          { label: 'Humidity',            palette: ['#FFFFCC','#41B6C4','#225EA8'], min: 60, max: 100, unit: '%' },
   eventRainfall:     { label: 'Event Rainfall',      palette: ['#FFFFFF','#C6DBEF','#6BAED6','#2171B5','#084594','#67000D'], min: 0, max: 300, unit: 'mm' },

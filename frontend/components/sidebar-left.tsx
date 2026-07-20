@@ -23,7 +23,7 @@ const MODULE1_LAYERS:  Array<{ key: StudyAreaLayerKey; label: string }> = [
   { key: 'districts',         label: 'Districts (outline)' },
 ];
 const METEOROLOGY_LAYERS = [
-  { key: 'peakWind', label: 'Peak Wind Speed' }, { key: 'tempAnomaly', label: 'Temperature Anomaly' },
+  { key: 'peakWind', label: 'Mean Surface Wind (ERA5)' }, { key: 'tempAnomaly', label: 'Temperature Anomaly' },
   { key: 'humidity', label: 'Relative Humidity' }, { key: 'eventRainfall', label: 'Event Rainfall' },
   { key: 'rainSeverity', label: 'Rainfall Severity' }, { key: 'heavyRain', label: 'Heavy Rain (>100 mm)' },
   { key: 'vHeavyRain', label: 'V. Heavy Rain (>150 mm)' },
