@@ -105,56 +105,83 @@ def get_track_layers(cyclone_name: str) -> dict:
 
     t = _build_track_layers_only(cyclone_name)
 
-    layers = {}
+    from concurrent.futures import ThreadPoolExecutor, as_completed
 
-    # Rainfall raster
-    try:
-        rain_mapid = t['rain_fp'].getMapId({
-            'min': 0, 'max': 200,
-            'palette': 'FFFFFF,C6DBEF,6BAED6,2171B5,084594,67000D'
-        })
-        layers['rainfallFootprint'] = {'tileUrl': rain_mapid['tile_fetcher'].url_format}
-    except Exception as e:
-        print(f"[M3] rainfallFootprint failed: {e}")
+    def _get_rain_tile():
+        try:
+            rain_mapid = t['rain_fp'].getMapId({
+                'min': 0, 'max': 200,
+                'palette': 'FFFFFF,C6DBEF,6BAED6,2171B5,084594,67000D'
+            })
+            return 'rainfallFootprint', {'tileUrl': rain_mapid['tile_fetcher'].url_format}
+        except Exception as e:
+            print(f"[M3] rainfallFootprint failed: {e}")
+            return 'rainfallFootprint', None
 
-    # Corridor outlines as styled FeatureCollections
-    for name, geom, color in [
-        ('corridor50km',  t['buf50'],  '00FFFF'),
-        ('corridor100km', t['buf100'], 'FFA500'),
-        ('corridor250km', t['buf250'], '800026'),
-    ]:
+    def _get_corridor_tile(name, geom, color):
         try:
             fc = ee.FeatureCollection([ee.Feature(geom)])
             img = fc.style(color=color, fillColor='00000000', width=2)
             mapid = img.getMapId({})
-            layers[name] = {'tileUrl': mapid['tile_fetcher'].url_format}
+            return name, {'tileUrl': mapid['tile_fetcher'].url_format}
         except Exception as e:
             print(f"[M3] {name} failed: {e}")
+            return name, None
 
-    # Track line raster tile
-    try:
-        track_fc = ee.FeatureCollection([ee.Feature(t['track_geom'])])
-        track_mapid = track_fc.style(color='FFFF00', width=3).getMapId({})
-        layers['cycloneTrack'] = {'tileUrl': track_mapid['tile_fetcher'].url_format}
-    except Exception as e:
-        print(f"[M3] cycloneTrack raster failed: {e}")
+    def _get_track_tile():
+        try:
+            track_fc = ee.FeatureCollection([ee.Feature(t['track_geom'])])
+            track_mapid = track_fc.style(color='FFFF00', width=3).getMapId({})
+            return 'cycloneTrack', {'tileUrl': track_mapid['tile_fetcher'].url_format}
+        except Exception as e:
+            print(f"[M3] cycloneTrack raster failed: {e}")
+            return 'cycloneTrack', None
 
-    # GeoJSON track points — select minimal properties
-    try:
-        pts_fc = (t['v_track']
-                  .select(['ISO_TIME', 'USA_WIND', 'USA_PRES', 'USA_LAT', 'USA_LON'])
-                  .limit(500)
-                  .getInfo())
-    except Exception as e:
-        print(f"[M3] trackPoints getInfo failed: {e}")
-        pts_fc = {'type': 'FeatureCollection', 'features': []}
+    def _get_pts():
+        try:
+            return (t['v_track']
+                    .select(['ISO_TIME', 'USA_WIND', 'USA_PRES', 'USA_LAT', 'USA_LON'])
+                    .limit(500)
+                    .getInfo())
+        except Exception as e:
+            print(f"[M3] trackPoints getInfo failed: {e}")
+            return {'type': 'FeatureCollection', 'features': []}
 
-    # GeoJSON line
-    try:
-        line_geojson = t['track_geom'].getInfo()
-    except Exception as e:
-        print(f"[M3] trackLine getInfo failed: {e}")
-        line_geojson = {'type': 'LineString', 'coordinates': []}
+    def _get_line():
+        try:
+            return t['track_geom'].getInfo()
+        except Exception as e:
+            print(f"[M3] trackLine getInfo failed: {e}")
+            return {'type': 'LineString', 'coordinates': []}
+
+    layers = {}
+    pts_fc = {'type': 'FeatureCollection', 'features': []}
+    line_geojson = {'type': 'LineString', 'coordinates': []}
+
+    with ThreadPoolExecutor(max_workers=7) as executor:
+        futures = {
+            executor.submit(_get_rain_tile): 'rain',
+            executor.submit(_get_corridor_tile, 'corridor50km',  t['buf50'],  '00FFFF'): 'c50',
+            executor.submit(_get_corridor_tile, 'corridor100km', t['buf100'], 'FFA500'): 'c100',
+            executor.submit(_get_corridor_tile, 'corridor250km', t['buf250'], '800026'): 'c250',
+            executor.submit(_get_track_tile): 'track',
+            executor.submit(_get_pts): 'pts',
+            executor.submit(_get_line): 'line',
+        }
+        for future in as_completed(futures):
+            key = futures[future]
+            try:
+                result = future.result()
+                if key in ('rain', 'c50', 'c100', 'c250', 'track'):
+                    name, val = result
+                    if val is not None:
+                        layers[name] = val
+                elif key == 'pts':
+                    pts_fc = result
+                elif key == 'line':
+                    line_geojson = result
+            except Exception as e:
+                print(f"[M3] future {key} raised: {e}")
 
     return {
         'trackPoints': pts_fc,

@@ -102,7 +102,7 @@ def _build_images(cyclone_name: str):
 # ---------------------------------------------------------------------------
 
 def get_meteorology_layers(cyclone_name: str) -> dict:
-    """Returns GEE XYZ tile URLs for all Module-2 layers. Very fast (~5 s)."""
+    """Returns GEE XYZ tile URLs for all Module-2 layers. Parallelized for speed."""
     if cyclone_name not in CYCLONE_DB:
         raise ValueError(f"Unknown cyclone '{cyclone_name}'")
 
@@ -118,10 +118,24 @@ def get_meteorology_layers(cyclone_name: str) -> dict:
         "vHeavyRain": (imgs["v_heavy_r"].selfMask(), {"palette": "800000"}),
     }
 
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
+    def _get_tile(name_img_vis):
+        name, (img, vis) = name_img_vis
+        try:
+            mapid = img.getMapId(vis)
+            return name, {"tileUrl": mapid["tile_fetcher"].url_format}
+        except Exception as e:
+            print(f"[M2] {name} getMapId failed: {e}")
+            return name, None
+
     layers = {}
-    for name, (img, vis) in tile_configs.items():
-        mapid = img.getMapId(vis)
-        layers[name] = {"tileUrl": mapid["tile_fetcher"].url_format}
+    with ThreadPoolExecutor(max_workers=7) as executor:
+        futures = {executor.submit(_get_tile, item): item[0] for item in tile_configs.items()}
+        for future in as_completed(futures):
+            name, result = future.result()
+            if result is not None:
+                layers[name] = result
 
     return {"layers": layers}
 

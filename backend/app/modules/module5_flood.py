@@ -142,13 +142,24 @@ def get_flood_layers(cyclone_name: str) -> dict:
         'floodDepth':  (t['flood_depth'], {'min': 0,   'max': 10, 'palette': 'FFFFCC,41B6C4,225EA8,081D58'}),
     }
 
-    layers = {}
-    for name, (img, vis) in tile_configs.items():
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
+    def _get_tile(name_img_vis):
+        name, (img, vis) = name_img_vis
         try:
             mapid = img.getMapId(vis)
-            layers[name] = {'tileUrl': mapid['tile_fetcher'].url_format}
+            return name, {'tileUrl': mapid['tile_fetcher'].url_format}
         except Exception as e:
             print(f"[M5] {name} layer failed: {e}")
+            return name, None
+
+    layers = {}
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        futures = {executor.submit(_get_tile, item): item[0] for item in tile_configs.items()}
+        for future in as_completed(futures):
+            name, result = future.result()
+            if result is not None:
+                layers[name] = result
 
     return {'layers': layers}
 

@@ -1,6 +1,7 @@
 import os
 import json
 import time
+import threading
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -32,7 +33,7 @@ app = FastAPI(
         "endpoints. Every number and every tile comes straight from Earth "
         "Engine — nothing here is computed, estimated, or mocked."
     ),
-    version="0.2.0",
+    version="0.3.0",
 )
 
 # Public dashboard — allow requests from any origin (Netlify, mobile, etc.)
@@ -40,7 +41,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_methods=["GET"],
+    allow_methods=["GET", "DELETE"],
     allow_headers=["*"],
 )
 
@@ -51,6 +52,10 @@ CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
 # Layer caches expire after 1.5 hours (GEE MapIDs typically expire in ~2 hours)
 LAYER_TTL = int(1.5 * 3600)
+
+# Track which endpoints are currently being computed (to avoid duplicate work)
+_computing = {}
+_computing_lock = threading.Lock()
 
 
 def _cache_path(endpoint: str, cyclone_name: str) -> Path:
@@ -144,6 +149,65 @@ def _safe_run(endpoint: str, cyclone_name: str, compute_func, use_ttl: bool = Fa
         raise HTTPException(status_code=500, detail=f"{type(e).__name__}: {e}") from e
 
 
+def _warmup_layers(cyclone_name: str):
+    """
+    Pre-compute and cache all layer endpoints for a cyclone.
+    Runs in a background thread at startup.
+    """
+    fast_endpoints = [
+        ("study_area",  module1_study_area.get_study_area,       False),
+        ("met_layers",  module2_meteorology.get_meteorology_layers, True),
+        ("track_layers",module3_track.get_track_layers,           True),
+        ("flood_layers", module5_flood.get_flood_layers,          True),
+        ("hazard_layers",module6_hazard.get_hazard_layers,        True),
+        ("veg_layers",  module7_vegetation.get_veg_layers,        True),
+        ("lulc_layers", module8_lulc.get_lulc_layers,             True),
+        ("pop_layers",  module9_population.get_pop_layers,        True),
+        ("mh_layers",   module10_multihazard.get_multihazard_layers, True),
+        ("val_layers",  module11_validation.get_validation_layers,   True),
+    ]
+
+    for endpoint, func, use_ttl in fast_endpoints:
+        path = _cache_path(endpoint, cyclone_name)
+        # Skip if already freshly cached
+        if path.exists():
+            try:
+                mtime = path.stat().st_mtime
+                age = time.time() - mtime
+                if not use_ttl or age < LAYER_TTL:
+                    print(f"[WARMUP] {endpoint}/{cyclone_name}: already cached (age {age:.0f}s)")
+                    continue
+            except Exception:
+                pass
+        try:
+            print(f"[WARMUP] Computing {endpoint}/{cyclone_name}...")
+            t0 = time.time()
+            if use_ttl:
+                get_cached_response_ttl(endpoint, cyclone_name, func)
+            else:
+                get_cached_response(endpoint, cyclone_name, func)
+            print(f"[WARMUP] {endpoint}/{cyclone_name} done in {time.time()-t0:.1f}s")
+        except Exception as e:
+            print(f"[WARMUP] {endpoint}/{cyclone_name} failed: {e}")
+
+
+def _run_warmup():
+    """Background thread that pre-warms all cyclone layer caches on startup."""
+    try:
+        print("[WARMUP] Waiting 5s for EE initialization...")
+        time.sleep(5)
+        ensure_initialized()
+        print("[WARMUP] EE ready. Starting cache warmup for all cyclones...")
+        # Fani first (most common/default), then others
+        priority = ["Fani", "Amphan", "Yaas", "Phailin", "Hudhud", "Biparjoy", "Michaung", "Mocha"]
+        for name in priority:
+            if name in CYCLONE_DB:
+                _warmup_layers(name)
+        print("[WARMUP] All cyclones warmed up!")
+    except Exception as e:
+        print(f"[WARMUP] Background warmup failed: {e}")
+
+
 # ---------------------------------------------------------------------------
 # Health & metadata
 # ---------------------------------------------------------------------------
@@ -174,6 +238,34 @@ def test_gee():
         import traceback
         return {"status": "error", "exception": str(e), "traceback": traceback.format_exc()}
 
+
+@app.get("/api/warmup-status")
+def warmup_status():
+    """Check which cyclone caches are ready."""
+    status = {}
+    for cyclone in CYCLONE_DB:
+        endpoints = ["study_area", "met_layers", "track_layers", "flood_layers",
+                     "hazard_layers", "veg_layers", "lulc_layers", "pop_layers",
+                     "mh_layers", "val_layers"]
+        ready = []
+        missing = []
+        for ep in endpoints:
+            path = _cache_path(ep, cyclone)
+            if path.exists():
+                age = time.time() - path.stat().st_mtime
+                ready.append(f"{ep} ({age:.0f}s ago)")
+            else:
+                missing.append(ep)
+        status[cyclone] = {"ready": len(ready), "missing": missing}
+    return status
+
+
+@app.on_event("startup")
+async def startup_event():
+    """Launch background warmup thread when the server starts."""
+    t = threading.Thread(target=_run_warmup, daemon=True)
+    t.start()
+    print("[STARTUP] Background warmup thread started.")
 
 
 @app.get("/api/cyclones")
