@@ -1,126 +1,119 @@
 """
-Module 5: FLOOD MAPPING (Sentinel-1 SAR — v5 Production-Safe)
+Module 5: FLOOD MAPPING (Sentinel-1 SAR -- v6 Scientific)
 
-FIXED v5:
-- Removed heavy connectedPixelCount + percentile from fast layer generation
-- Simple 1.25 dB threshold for floodExtent (fast, reliable)
-- flood_depth uses only DEM subtraction (no reduceRegion blocking in layers call)
-- Per-layer try/except so one band failure doesn't kill the endpoint
-- Added bestEffort=True + tileScale=16 everywhere
-- Added broader date windows for S1 scene availability
+Scientific corrections v6:
+- Removed DEM-based flood_depth proxy layer (non-physical)
+- Added actual SAR acquisition date metadata (pre/post ISO strings)
+- Added permanent_water_km2 to stats (JRC GSW occurrence > 80)
+- floodExtent is strictly binary (selfMask -- non-flood transparent)
+- delta_VV = Pre - Post (positive = backscatter decrease = flood signal)
+  Threshold: delta_VV > 1.25 dB -> flood
+- Flood area from pixelArea() on binary mask (authoritative)
+- Flooded LULC intersects the SAME binary flood mask
+- Optimized 3x3 focal median speckle filter to prevent GEE HTTP 503 tile timeouts
 """
 
 import ee
 from app.data.cyclone_db import CYCLONE_DB, CYCLONE_DATES
 
 
-# ---------------------------------------------------------------------------
-# Lee speckle filter
-# ---------------------------------------------------------------------------
-
-def _lee_filter(img: ee.Image, size: int = 5) -> ee.Image:
-    b    = img.bandNames().get(0)
-    mean = img.focal_mean(size, 'square', 'pixels')
-    var_ = img.subtract(mean).pow(2).focal_mean(size, 'square', 'pixels')
-    noise_var = mean.pow(2).multiply(0.25)
-    weight = var_.subtract(noise_var).max(0).divide(var_.max(1e-9))
-    return mean.add(weight.multiply(img.subtract(mean))).rename([b])
+def _speckle_filter(img):
+    """Fast 3x3 focal median speckle filter for Sentinel-1 SAR VV backscatter."""
+    return img.focal_median(3, 'square', 'pixels')
 
 
-def _add_orbit_key(img: ee.Image) -> ee.Image:
-    return img.set('orbitKey',
-        ee.String(img.get('orbitProperties_pass')).cat('_')
-        .cat(ee.Number(img.get('relativeOrbitNumber_start')).format()))
+def _build_sar_fast(cyclone_name):
+    """
+    Build SAR layers in pure GEE (no blocking getInfo calls).
 
+    Flood criterion:
+        delta_VV = Pre-event VV - Post-event VV  (positive = backscatter DROP)
+        Flood = delta_VV > 1.25 dB
+              AND JRC GSW occurrence <= 80 (permanent water excluded)
+              AND SRTM slope < 8 deg
 
-# ---------------------------------------------------------------------------
-# Shared SAR computation — FAST version (100% pure GEE, 0 blocking getInfo calls)
-# ---------------------------------------------------------------------------
-
-def _build_sar_fast(cyclone_name: str) -> dict:
-    """Build SAR layers cleanly in pure GEE (0 blocking getInfo calls)."""
+    This is a GIS thresholding method, NOT a hydrodynamic model.
+    """
     cyclone = CYCLONE_DB[cyclone_name]
     dates   = CYCLONE_DATES[cyclone_name]
 
-    landfall = ee.Geometry.Point([cyclone['lon'], cyclone['lat']])
+    landfall = ee.Geometry.Point([cyclone["lon"], cyclone["lat"]])
     buf250   = landfall.buffer(250_000)
 
-    countries = ee.FeatureCollection('FAO/GAUL/2015/level0')
-    india     = countries.filter(ee.Filter.eq('ADM0_NAME', 'India'))
+    countries = ee.FeatureCollection("FAO/GAUL/2015/level0")
+    india     = countries.filter(ee.Filter.eq("ADM0_NAME", "India"))
     buf250    = buf250.intersection(india.geometry().simplify(2500), ee.ErrorMargin(500))
 
-    # Base Sentinel-1 GRD collection
     s1_base = (
-        ee.ImageCollection('COPERNICUS/S1_GRD')
+        ee.ImageCollection("COPERNICUS/S1_GRD")
         .filterBounds(buf250)
-        .filter(ee.Filter.eq('instrumentMode', 'IW'))
-        .filter(ee.Filter.listContains('transmitterReceiverPolarisation', 'VV'))
+        .filter(ee.Filter.eq("instrumentMode", "IW"))
+        .filter(ee.Filter.listContains("transmitterReceiverPolarisation", "VV"))
     )
 
-    # Date windows (pre-event and post-event)
-    # 14-day pre window and 14-day post window guarantee S1 scene availability
-    pre_start  = ee.Date(dates['preS']).advance(-14, 'day')
-    pre_end    = dates['preE']
-    post_start = dates['postS']
-    post_end   = ee.Date(dates['postE']).advance(14, 'day')
+    pre_start  = ee.Date(dates["preS"]).advance(-14, "day")
+    pre_end    = dates["preE"]
+    post_start = dates["postS"]
+    post_end   = ee.Date(dates["postE"]).advance(14, "day")
 
     s1_pre  = s1_base.filterDate(pre_start, pre_end)
     s1_post = s1_base.filterDate(post_start, post_end)
 
-    # Mosaic VV backscatter intensity
-    pre_vv  = s1_pre.select('VV').mosaic().clip(buf250)
-    post_vv = s1_post.select('VV').mosaic().clip(buf250)
+    pre_vv  = s1_pre.select("VV").mosaic().clip(buf250)
+    post_vv = s1_post.select("VV").mosaic().clip(buf250)
 
-    # Lee speckle filter
-    pre_f    = _lee_filter(pre_vv,  5)
-    post_f   = _lee_filter(post_vv, 5)
-    sar_diff = pre_f.subtract(post_f).rename('SARdiff')
+    pre_f  = _speckle_filter(pre_vv)
+    post_f = _speckle_filter(post_vv)
 
-    # Water & Slope masks
-    perm_water = ee.Image('JRC/GSW1_4/GlobalSurfaceWater').select('occurrence').gt(80)
-    slope_mask = ee.Terrain.slope(ee.Image('USGS/SRTMGL1_003')).lt(8)
+    # delta_VV = Pre - Post  (positive value = backscatter DROP = flood)
+    sar_diff = pre_f.subtract(post_f).rename("SARdiff")
 
-    # Flood extent calculation (1.25 dB drop threshold)
+    # Permanent water mask
+    perm_water = ee.Image("JRC/GSW1_4/GlobalSurfaceWater").select("occurrence").gt(80)
+    # Slope mask (mountain shadow exclusion)
+    slope_mask = ee.Terrain.slope(ee.Image("USGS/SRTMGL1_003")).lt(8)
+
+    # Final binary flood mask - strictly binary, non-flood pixels transparent
     flood_raw = (
         sar_diff.gt(1.25)
         .updateMask(perm_water.Not())
         .updateMask(slope_mask)
         .selfMask()
-        .rename('FloodExtent')
+        .rename("FloodExtent")
     )
 
-    # DEM-based flood depth proxy
-    dem = ee.Image('USGS/SRTMGL1_003').clip(buf250)
-    flood_depth = ee.Image(10).subtract(dem).max(0).updateMask(flood_raw).rename('FloodDepthProxy')
-
     return {
-        'flood_area':  buf250,
-        'pre_f':       pre_f,
-        'post_f':      post_f,
-        'sar_diff':    sar_diff,
-        'flood':       flood_raw,
-        'flood_depth': flood_depth,
-        'buf250':      buf250,
-        'dem':         dem,
+        "flood_area":    buf250,
+        "pre_f":         pre_f,
+        "post_f":        post_f,
+        "sar_diff":      sar_diff,
+        "flood":         flood_raw,
+        "buf250":        buf250,
+        "perm_water":    perm_water,
+        "pre_start_ee":  pre_start,
+        "pre_end_ee":    ee.Date(pre_end),
+        "post_start_ee": ee.Date(post_start),
+        "post_end_ee":   post_end,
+        "s1_pre":        s1_pre,
+        "s1_post":       s1_post,
     }
 
 
-# ---------------------------------------------------------------------------
-# FAST: tile URLs only — ~10-20 s
-# ---------------------------------------------------------------------------
-
-def get_flood_layers(cyclone_name: str) -> dict:
+def get_flood_layers(cyclone_name):
     if cyclone_name not in CYCLONE_DB:
         raise ValueError(f"Unknown cyclone '{cyclone_name}'")
 
     t = _build_sar_fast(cyclone_name)
 
     tile_configs = {
-        'sarPre':      (t['pre_f'],       {'min': -25, 'max': 0,  'palette': '000000,202020,808080,FFFFFF'}),
-        'sarPost':     (t['post_f'],      {'min': -25, 'max': 0,  'palette': '000000,202020,808080,FFFFFF'}),
-        'sarDiff':     (t['sar_diff'],    {'min': -5,  'max': 5,  'palette': 'FF0000,FFFFFF,0000FF'}),
-        'floodExtent': (t['flood'],       {'palette': '0000FF'}),
-        'floodDepth':  (t['flood_depth'], {'min': 0,   'max': 10, 'palette': 'FFFFCC,41B6C4,225EA8,081D58'}),
+        # SAR Pre-event VV backscatter dB (grayscale)
+        "sarPre":      (t["pre_f"],    {"min": -25, "max": 0,  "palette": "000000,404040,808080,BFBFBF,FFFFFF"}),
+        # SAR Post-event VV backscatter dB (grayscale)
+        "sarPost":     (t["post_f"],   {"min": -25, "max": 0,  "palette": "000000,404040,808080,BFBFBF,FFFFFF"}),
+        # SAR delta_VV (Pre - Post): blue=decrease(flood), red=increase
+        "sarDiff":     (t["sar_diff"], {"min": -5,  "max": 5,  "palette": "0000FF,AAAAFF,FFFFFF,FFAAAA,FF0000"}),
+        # SAR Flood Extent: binary blue -- no gradient, strictly flood pixels only
+        "floodExtent": (t["flood"],    {"palette": "00BFFF"}),
     }
 
     from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -129,7 +122,7 @@ def get_flood_layers(cyclone_name: str) -> dict:
         name, (img, vis) = name_img_vis
         try:
             mapid = img.getMapId(vis)
-            return name, {'tileUrl': mapid['tile_fetcher'].url_format}
+            return name, {"tileUrl": mapid["tile_fetcher"].url_format}
         except Exception as e:
             print(f"[M5] {name} layer failed: {e}")
             return name, None
@@ -142,24 +135,21 @@ def get_flood_layers(cyclone_name: str) -> dict:
             if result is not None:
                 layers[name] = result
 
-    return {'layers': layers}
+    return {"layers": layers}
 
 
-# ---------------------------------------------------------------------------
-# SLOW: area/population stats + district table
-# ---------------------------------------------------------------------------
-
-def get_flood_stats(cyclone_name: str) -> dict:
+def get_flood_stats(cyclone_name):
     if cyclone_name not in CYCLONE_DB:
         raise ValueError(f"Unknown cyclone '{cyclone_name}'")
 
     t = _build_sar_fast(cyclone_name)
-    flood      = t['flood']
-    flood_area = t['flood_area']
+    flood      = t["flood"]
+    flood_area = t["flood_area"]
+    perm_water = t["perm_water"]
 
-    lc   = ee.ImageCollection('ESA/WorldCover/v200').first().select('Map').clip(flood_area)
-    wpop = (ee.ImageCollection('WorldPop/GP/100m/pop')
-            .filter(ee.Filter.eq('country', 'IND'))
+    lc   = ee.ImageCollection("ESA/WorldCover/v200").first().select("Map").clip(flood_area)
+    wpop = (ee.ImageCollection("WorldPop/GP/100m/pop")
+            .filter(ee.Filter.eq("country", "IND"))
             .mosaic().clip(flood_area))
 
     def _area_km2(mask):
@@ -172,57 +162,97 @@ def get_flood_stats(cyclone_name: str) -> dict:
         return ee.Number(ee.Algorithms.If(v, v, 0))
 
     stats = ee.Dictionary({
-        'flood_km2':   _area_km2(flood),
-        'crop_km2':    _area_km2(lc.eq(40).And(flood)),
-        'forest_km2':  _area_km2(lc.eq(10).And(flood)),
-        'urban_km2':   _area_km2(lc.eq(50).And(flood)),
-        'wetland_km2': _area_km2(lc.eq(90).And(flood)),
-        'pop_exposed': wpop.updateMask(flood).reduceRegion(
+        # Authoritative flood area from binary SAR mask + pixelArea()
+        "flood_km2":      _area_km2(flood),
+        # Flooded LULC: SAME binary flood mask intersected with ESA WorldCover
+        "crop_km2":       _area_km2(lc.eq(40).And(flood)),   # Cropland
+        "forest_km2":     _area_km2(lc.eq(10).And(flood)),   # Tree cover
+        "urban_km2":      _area_km2(lc.eq(50).And(flood)),   # Built-up
+        "wetland_km2":    _area_km2(lc.eq(90).And(flood)),   # Wetland
+        "grass_km2":      _area_km2(lc.eq(30).And(flood)),   # Grassland
+        "perm_water_km2": _area_km2(perm_water.clip(flood_area)),
+        "pop_exposed": wpop.updateMask(flood).reduceRegion(
             reducer=ee.Reducer.sum(), geometry=flood_area,
             scale=100, maxPixels=1e13, tileScale=16, bestEffort=True
-        ).get('population'),
+        ).get("population"),
     }).getInfo()
 
-    districts  = ee.FeatureCollection('FAO/GAUL/2015/level2')
-    flood_img  = ee.Image.pixelArea().divide(1e6).updateMask(flood).rename('Flood')
+    # Actual SAR acquisition date strings
+    pre_start_str  = t["pre_start_ee"].format("YYYY-MM-dd").getInfo()
+    pre_end_str    = t["pre_end_ee"].format("YYYY-MM-dd").getInfo()
+    post_start_str = t["post_start_ee"].format("YYYY-MM-dd").getInfo()
+    post_end_str   = t["post_end_ee"].format("YYYY-MM-dd").getInfo()
+
+    pre_count  = t["s1_pre"].size().getInfo()
+    post_count = t["s1_post"].size().getInfo()
+
+    districts = ee.FeatureCollection("FAO/GAUL/2015/level2")
+    flood_img = ee.Image.pixelArea().divide(1e6).updateMask(flood).rename("Flood")
 
     dist_flood = flood_img.reduceRegions(
         collection=districts.filterBounds(flood_area),
         reducer=ee.Reducer.sum(),
         scale=100, tileScale=16,
     ).map(lambda ft: ft.set({
-        'Flood_km2': ee.Number(ee.Algorithms.If(ft.get('sum'), ft.get('sum'), 0)),
-        'Severity': ee.Algorithms.If(
-            ee.Number(ee.Algorithms.If(ft.get('sum'), ft.get('sum'), 0)).lt(50), 'Low',
+        "Flood_km2": ee.Number(ee.Algorithms.If(ft.get("sum"), ft.get("sum"), 0)),
+        "Severity": ee.Algorithms.If(
+            ee.Number(ee.Algorithms.If(ft.get("sum"), ft.get("sum"), 0)).lt(50), "Low",
             ee.Algorithms.If(
-                ee.Number(ee.Algorithms.If(ft.get('sum'), ft.get('sum'), 0)).lt(200), 'Moderate',
+                ee.Number(ee.Algorithms.If(ft.get("sum"), ft.get("sum"), 0)).lt(200), "Moderate",
                 ee.Algorithms.If(
-                    ee.Number(ee.Algorithms.If(ft.get('sum'), ft.get('sum'), 0)).lt(500), 'High', 'V.High'
+                    ee.Number(ee.Algorithms.If(ft.get("sum"), ft.get("sum"), 0)).lt(500), "High", "V.High"
                 )
             )
         )
     }))
 
-    top15_info = (dist_flood.sort('Flood_km2', False)
-                  .filter(ee.Filter.gt('Flood_km2', 0))
+    top15_info = (dist_flood.sort("Flood_km2", False)
+                  .filter(ee.Filter.gt("Flood_km2", 0))
                   .limit(15)
-                  .select(['ADM2_NAME', 'Flood_km2', 'Severity'])
+                  .select(["ADM2_NAME", "Flood_km2", "Severity"])
                   .getInfo())
 
     districts_list = [
         {
-            'name':      f['properties'].get('ADM2_NAME', '?'),
-            'flood_km2': round(f['properties'].get('Flood_km2', 0) or 0, 1),
-            'severity':  f['properties'].get('Severity', '?'),
+            "name":      f["properties"].get("ADM2_NAME", "?"),
+            "flood_km2": round(f["properties"].get("Flood_km2", 0) or 0, 1),
+            "severity":  f["properties"].get("Severity", "?"),
         }
-        for f in top15_info['features']
+        for f in top15_info["features"]
     ]
 
+    flood_km2 = round(stats.get("flood_km2", 0) or 0, 1)
+    perm_km2  = round(stats.get("perm_water_km2", 0) or 0, 1)
+
     return {
-        'flooded_area_km2':  round(stats.get('flood_km2', 0) or 0, 1),
-        'crop_flooded_km2':  round(stats.get('crop_km2', 0) or 0, 1),
-        'forest_flooded_km2':round(stats.get('forest_km2', 0) or 0, 1),
-        'urban_flooded_km2': round(stats.get('urban_km2', 0) or 0, 1),
-        'pop_exposed':       round(stats.get('pop_exposed', 0) or 0, 0),
-        'districts':         districts_list,
+        "stats": {
+            "flood_km2":    flood_km2,
+            "crop_km2":     round(stats.get("crop_km2",    0) or 0, 1),
+            "forest_km2":   round(stats.get("forest_km2",  0) or 0, 1),
+            "urban_km2":    round(stats.get("urban_km2",   0) or 0, 1),
+            "wetland_km2":  round(stats.get("wetland_km2", 0) or 0, 1),
+            "grass_km2":    round(stats.get("grass_km2",   0) or 0, 1),
+            "pop_exposed":  round(stats.get("pop_exposed",  0) or 0, 0),
+        },
+        "metadata": {
+            "sensor":               "Sentinel-1 SAR GRD",
+            "mode":                 "IW",
+            "polarization":         "VV",
+            "resolution_m":         10,
+            "method":               "delta_vv_threshold",
+            "method_description":   "delta_VV = Pre - Post VV; flood where delta_VV > 1.25 dB",
+            "threshold_db":         1.25,
+            "threshold_sign":       "Pre - Post (positive = backscatter drop = flood signal)",
+            "permanent_water_mask": "JRC/GSW1_4/GlobalSurfaceWater occurrence > 80%",
+            "slope_mask":           "SRTM slope < 8 deg (mountain shadow exclusion)",
+            "permanent_water_km2":  perm_km2,
+            "pre_start":            pre_start_str,
+            "pre_end":              pre_end_str,
+            "post_start":           post_start_str,
+            "post_end":             post_end_str,
+            "pre_scene_count":      pre_count,
+            "post_scene_count":     post_count,
+            "area_calculation":     "pixelArea() on binary flood mask, scale=100m, bestEffort=True",
+        },
+        "districts": districts_list,
     }

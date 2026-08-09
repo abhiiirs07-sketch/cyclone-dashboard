@@ -111,18 +111,18 @@ export function SidebarRight({
         : reportSummary.rainfall?.max_mm || 150,
     },
     flood: {
-      flooded_area_km2: floodStats?.stats?.flood_km2 ?? reportSummary.flood?.flooded_area_km2 ?? 1233.5,
+      flooded_area_km2: floodStats?.stats?.flood_km2 ?? reportSummary.flood?.flooded_area_km2 ?? 0,
     },
     vegetation: {
-      damaged_area_km2: vegStats?.stats?.total_damage_km2 ?? reportSummary.vegetation?.damaged_area_km2 ?? 442.2,
+      damaged_area_km2: vegStats?.stats?.total_damage_km2 ?? reportSummary.vegetation?.damaged_area_km2 ?? 0,
     },
     hazard: {
-      mean_index: hazardStats?.hazard?.mean ?? reportSummary.hazard?.mean_index ?? 0.159,
-      max_index: hazardStats?.hazard?.max ?? reportSummary.hazard?.max_index ?? 0.450,
+      mean_index: hazardStats?.hazard?.mean ?? reportSummary.hazard?.mean_index ?? 0,
+      max_index: hazardStats?.hazard?.max ?? reportSummary.hazard?.max_index ?? 0,
     },
     population: {
-      total: popStats?.summary?.total_pop ?? reportSummary.population?.total ?? 4424120,
-      pct_flooded: popStats?.summary?.pct_flooded ?? reportSummary.population?.pct_flooded ?? 0.9,
+      total: popStats?.summary?.total_pop ?? reportSummary.population?.total ?? 0,
+      pct_flooded: popStats?.summary?.pct_flooded ?? reportSummary.population?.pct_flooded ?? 0,
     },
     top_hazard_districts: hazardStats?.districtHazard
       ? hazardStats.districtHazard.slice(0, 10).map(d => ({ name: d.name, hazard_mean: d.index }))
@@ -154,16 +154,20 @@ export function SidebarRight({
         )}
         {trackStats && (
           <div className="mb-3">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)]">
-              Track (IBTrACS)
+            <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)]">
+              Cyclone Track (IBTrACS v4 / NOAA)
             </p>
+            {/* IBTrACS classification note */}
+            <div className="mb-2 rounded border border-sky-500/20 bg-sky-950/20 p-2 text-[10px] leading-snug">
+              <p className="font-semibold text-sky-300 mb-0.5">IBTrACS/JTWC Peak Intensity</p>
+              <p className="text-[var(--text-secondary)]">Cat: <span className="font-mono text-[var(--text-primary)]">{trackStats.track.category}</span> · Wind: <span className="font-mono text-[var(--text-primary)]">{Math.round(trackStats.track.max_wind_kt)} kt</span> · Press: <span className="font-mono text-[var(--text-primary)]">{Math.round(trackStats.track.min_pres_hpa)} hPa</span></p>
+              <p className="mt-0.5 font-semibold text-amber-300">IMD/RSMC Official Classification</p>
+              <p className="text-[var(--text-secondary)]">Extremely Severe Cyclonic Storm (ESCS) · ~115 kt · ~932 hPa</p>
+            </div>
             <div className="grid grid-cols-2 gap-2">
-              <MetricCard label="Category"   value={trackStats.track.category}                       unit="" />
-              <MetricCard label="Max Wind"   value={Math.round(trackStats.track.max_wind_kt).toString()} unit="kt" />
-              <MetricCard label="Min Press"  value={Math.round(trackStats.track.min_pres_hpa).toString()} unit="hPa" />
-              <MetricCard label="Length"     value={Math.round(trackStats.track.length_km).toString()}   unit="km" />
-              <MetricCard label="Duration"   value={Math.round(trackStats.track.duration_hr).toString()}  unit="hr" />
-              <MetricCard label="Surge (50km)" value={Math.round(trackStats.corridors.surge_50km_km2).toString()} unit="km²" />
+              <MetricCard label="IBTrACS Track Length" value={Math.round(trackStats.track.length_km).toString()}   unit="km" />
+              <MetricCard label="Lifecycle Duration"   value={Math.round(trackStats.track.duration_hr).toString()}  unit="hr" />
+              <MetricCard label="Coastal Suscept. Zone (50km)" value={Math.round(trackStats.corridors.surge_50km_km2).toString()} unit="km²" />
             </div>
           </div>
         )}
@@ -171,14 +175,15 @@ export function SidebarRight({
         {/* Module 2 – Meteorology stats */}
         {meteorologyStats?.stats && (
           <div>
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)]">Meteorology (GEE)</p>
+            <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)]">Meteorology</p>
+            <p className="mb-2 text-[10px] text-[var(--text-tertiary)]">ERA5 Reanalysis (~28 km) | CHIRPS (~5.6 km)</p>
             <div className="grid grid-cols-2 gap-2">
-              <MetricCard label="ERA5 Mean Surface Wind" value={fmt(meteorologyStats.stats.wind_max, 1)} unit="m/s" />
-              <MetricCard label="Mean Temp"       value={fmt(meteorologyStats.stats.temp_mean, 1)}       unit="°C" />
-              <MetricCard label="Min Pressure"    value={fmt(meteorologyStats.stats.pres_min, 0)}        unit="hPa" />
-              <MetricCard label="Mean Humidity"   value={fmt(meteorologyStats.stats.humidity_mean, 0)}   unit="%" />
-              <MetricCard label="Mean Rainfall"   value={fmt(meteorologyStats.stats.mean_rain, 1)}       unit="mm" />
-              <MetricCard label="Heavy Rain Area" value={fmt(meteorologyStats.stats.heavy_rain_area_km2, 0)} unit="km²" />
+              <MetricCard label="ERA5 Max 10m Wind" value={fmt(meteorologyStats.stats.wind_max, 1)} unit="m/s" />
+              <MetricCard label="Mean Temp"          value={fmt(meteorologyStats.stats.temp_mean, 1)}       unit="°C" />
+              <MetricCard label="Min ERA5 MSLP"      value={fmt(meteorologyStats.stats.pres_min, 0)}        unit="hPa" />
+              <MetricCard label="Mean Humidity"      value={fmt(meteorologyStats.stats.humidity_mean, 0)}   unit="%" />
+              <MetricCard label="CHIRPS Mean Daily Rainfall" value={fmt(meteorologyStats.stats.mean_rain, 1)} unit="mm/day" />
+              <MetricCard label="Heavy Rain Area"    value={fmt(meteorologyStats.stats.heavy_rain_area_km2, 0)} unit="km²" />
             </div>
           </div>
         )}
@@ -192,15 +197,21 @@ export function SidebarRight({
         )}
         {floodStats?.stats && (
           <div className="mt-3">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-blue-400">Flood Mapping (SAR)</p>
+            <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-blue-400">SAR Flood Detection (Sentinel-1 VV, 10m)</p>
+            <p className="mb-2 text-[10px] text-[var(--text-tertiary)]">Binary mask: ΔVV &gt; 1.25 dB (Pre−Post drop) · GSW perm water &gt; 80% excluded</p>
             <div className="grid grid-cols-2 gap-2">
-              <MetricCard label="Flood Area"    value={fmt(floodStats.stats.flood_km2, 0)}   unit="km²" />
-              <MetricCard label="Pop Exposed"   value={Math.round(floodStats.stats.pop_exposed ?? 0).toLocaleString()} unit="" />
-              <MetricCard label="Crop Flooded"  value={fmt(floodStats.stats.crop_km2, 0)}    unit="km²" />
-              <MetricCard label="Urban Flooded" value={fmt(floodStats.stats.urban_km2, 0)}   unit="km²" />
-              <MetricCard label="Forest Flood"  value={fmt(floodStats.stats.forest_km2, 0)}  unit="km²" />
-              <MetricCard label="Wetland Flood" value={fmt(floodStats.stats.wetland_km2, 0)} unit="km²" />
+              <MetricCard label="SAR Flood Area"  value={fmt(floodStats.stats.flood_km2, 0)}   unit="km²" />
+              <MetricCard label="Pop Exposed"     value={Math.round(floodStats.stats.pop_exposed ?? 0).toLocaleString()} unit="" />
+              <MetricCard label="Crop Flooded"    value={fmt(floodStats.stats.crop_km2, 0)}    unit="km²" />
+              <MetricCard label="Urban Flooded"   value={fmt(floodStats.stats.urban_km2, 0)}   unit="km²" />
+              <MetricCard label="Forest Flooded"  value={fmt(floodStats.stats.forest_km2, 0)}  unit="km²" />
+              <MetricCard label="Wetland Flooded" value={fmt(floodStats.stats.wetland_km2, 0)} unit="km²" />
             </div>
+            {floodStats.metadata?.permanent_water_km2 != null && (
+              <p className="mt-1.5 text-[10px] leading-snug rounded p-1.5 border border-sky-500/20 bg-sky-950/20 text-sky-300">
+                ℹ️ Excluded permanent water: {fmt(floodStats.metadata.permanent_water_km2, 0)} km² (GSW occurrence &gt; 80%)
+              </p>
+            )}
           </div>
         )}
 
@@ -210,12 +221,15 @@ export function SidebarRight({
         )}
         {hazardStats?.hazard && (
           <div className="mt-3">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-red-400">Hazard & Surge Index</p>
+            <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-red-400">District Hazard Index</p>
+            <p className="mb-2 text-[10px] text-[var(--text-tertiary)] leading-snug bg-red-950/20 border border-red-500/20 rounded p-1.5">
+              ⚠️ GIS-based susceptibility proxy (terrain/LULC/population). Not a hydrodynamic simulation.
+            </p>
             <div className="grid grid-cols-2 gap-2">
               <MetricCard label="Hazard Mean" value={fmt(hazardStats.hazard.mean, 3)} unit="" />
               <MetricCard label="Hazard Max"  value={fmt(hazardStats.hazard.max, 3)}  unit="" />
-              <MetricCard label="Surge Mean"  value={fmt(hazardStats.surge?.mean, 3)} unit="" />
-              <MetricCard label="Surge Max"   value={fmt(hazardStats.surge?.max, 3)}  unit="" />
+              <MetricCard label="Surge Suscept. Mean" value={fmt(hazardStats.surge?.mean, 3)} unit="" />
+              <MetricCard label="Surge Suscept. Max"  value={fmt(hazardStats.surge?.max, 3)}  unit="" />
               <MetricCard label="Elev Mean"   value={fmt(hazardStats.terrain?.elev_mean, 0)} unit="m" />
               <MetricCard label="Lowland"     value={fmt(hazardStats.terrain?.lowland_km2, 0)} unit="km²" />
             </div>
@@ -228,22 +242,29 @@ export function SidebarRight({
         )}
         {vegStats?.stats && (
           <div className="mt-3">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-green-400">Vegetation Damage (S-2)</p>
+            <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-green-400">Vegetation Damage (Sentinel-2, 10m)</p>
+            <p className="mb-2 text-[10px] text-[var(--text-tertiary)]">Mutually exclusive classes (Severe &gt; Forest &gt; Crop &gt; General)</p>
             <div className="grid grid-cols-2 gap-2">
-              <MetricCard label="Total Damage"   value={fmt(vegStats.stats.total_damage_km2, 0)}                      unit="km²" />
-              <MetricCard label="ΔNDVI Mean"     value={fmt(vegStats.stats.dndvi_mean, 3)}                           unit="" />
-              <MetricCard label="Forest Damage"  value={fmt(vegStats.stats['Forest Damage'], 0)}                    unit="km²" />
-              <MetricCard label="Crop Damage"    value={fmt(vegStats.stats['Crop Damage'], 0)}                      unit="km²" />
+              <MetricCard label="Classified Damage" value={fmt(vegStats.stats.total_classified_damage_km2 ?? vegStats.stats.total_damage_km2, 0)} unit="km²" />
+              <MetricCard label="Mean ΔNDVI (Post−Pre)" value={fmt(vegStats.stats.dndvi_mean, 3)} unit="" />
+              <MetricCard label="Forest Damage"  value={fmt(vegStats.stats['Forest Damage'], 0)} unit="km²" />
+              <MetricCard label="Crop Damage"    value={fmt(vegStats.stats['Crop Damage'], 0)}   unit="km²" />
               <MetricCard
                 label="Severe Damage"
                 value={(() => {
                   const val = vegStats.stats['Severe Damage'];
-                  return val && val > 0 ? fmt(val, 0) : 'No Severe Damage Detected';
+                  return val && val > 0 ? fmt(val, 0) : 'None detected';
                 })()}
                 unit={vegStats.stats['Severe Damage'] && vegStats.stats['Severe Damage'] > 0 ? 'km²' : ''}
               />
-              <MetricCard label="General Damage" value={fmt(vegStats.stats['General Damage'], 0)}                   unit="km²" />
+              <MetricCard label="General Damage" value={fmt(vegStats.stats['General Damage'], 0)} unit="km²" />
             </div>
+            {vegStats.stats.ndvi_decrease_km2 != null && (
+              <div className="mt-1.5 text-[10px] leading-snug rounded p-1.5 border border-green-500/20 bg-green-950/20 text-green-300 space-y-0.5">
+                <p><span className="font-semibold">Authoritative Classified:</span> {fmt(vegStats.stats.total_classified_damage_km2, 0)} km² (mutually exclusive)</p>
+                <p><span className="font-semibold">Broader NDVI-Decrease:</span> {fmt(vegStats.stats.ndvi_decrease_km2, 0)} km² (ΔNDVI &lt; −0.2 mask)</p>
+              </div>
+            )}
           </div>
         )}
 
@@ -269,13 +290,14 @@ export function SidebarRight({
         )}
         {popStats?.summary && (
           <div className="mt-3">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-orange-400">Population Exposure (GPW v4)</p>
+            <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-orange-400">Population Exposure (GPW v4.11)</p>
+            <p className="mb-2 text-[10px] text-[var(--text-tertiary)]">Baseline: GPW 2020 — not exact 2019 population</p>
             <div className="space-y-2 mb-2">
-              <MetricCard label="Population inside Cyclone Impact Zone" value={fmt((popStats.summary.total_pop ?? 0) / 1e6, 2)} unit="M" />
+              <MetricCard label="Population in Impact Zone (GPW 2020)" value={fmt((popStats.summary.total_pop ?? 0) / 1e6, 2)} unit="M" />
               <div className="grid grid-cols-3 gap-2">
-                <MetricCard label="Flooded Pop"  value={fmt((popStats.summary.flooded_pop ?? 0) / 1e3, 1)}   unit="K" />
-                <MetricCard label="High Hazard"  value={fmt((popStats.summary.high_haz_pop ?? 0) / 1e3, 1)}  unit="K" />
-                <MetricCard label="Veg Damage"   value={fmt((popStats.summary.veg_dmg_pop ?? 0) / 1e3, 1)}   unit="K" />
+                <MetricCard label="Flood-Exposed" value={fmt((popStats.summary.flooded_pop ?? 0) / 1e3, 1)}   unit="K" />
+                <MetricCard label="High Hazard"   value={fmt((popStats.summary.high_haz_pop ?? 0) / 1e3, 1)}  unit="K" />
+                <MetricCard label="Veg Damage"    value={fmt((popStats.summary.veg_dmg_pop ?? 0) / 1e3, 1)}   unit="K" />
               </div>
             </div>
 
@@ -297,7 +319,10 @@ export function SidebarRight({
         )}
         {mhStats?.index && (
           <div className="mt-3">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-rose-400">Multi-Hazard Summary (Composite)</p>
+            <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-rose-400">Composite Multi-Hazard Index (MHI)</p>
+            <p className="mb-2 text-[10px] text-amber-300/80 leading-snug">
+              ⚠️ MHI ≠ District Hazard Index. MHI = weighted composite (flood+veg+pop+LULC+hazard). District Hazard Index = terrain/surge/LULC/population.
+            </p>
             <div className="space-y-2">
               <MetricCard label="Moderate-or-Higher Hazard Districts" value={String(mhStats.district_ranking?.length ?? 0)} unit="" />
               <div className="grid grid-cols-3 gap-2">
@@ -326,7 +351,6 @@ export function SidebarRight({
         )}
       </Section>
 
-      {/* ── Module 11 Validation ── */}
       <Section title="Accuracy & Validation">
         {valLayersReady && !valStats && valStatsLoading && (
           <p className="text-xs text-[var(--text-tertiary)] animate-pulse">⏳ Loading validation metrics…</p>
@@ -336,20 +360,37 @@ export function SidebarRight({
         )}
         {valStats?.flood_accuracy && (
           <div className="space-y-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-teal-400">Flood Map Accuracy (SAR vs Landsat)</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-teal-400">Flood Detection Validation</p>
+            {/* Source descriptions */}
+            <div className="rounded border border-teal-500/20 bg-teal-950/20 p-2 text-[10px] space-y-0.5">
+              <p><span className="text-teal-300 font-semibold">Prediction:</span> <span className="text-[var(--text-secondary)]">Sentinel-1 SAR flood mask (VV backscatter threshold)</span></p>
+              <p><span className="text-teal-300 font-semibold">Reference:</span> <span className="text-[var(--text-secondary)]">Landsat-8/9 MNDWI &gt; 0.2 (post-event optical water mask)</span></p>
+            </div>
+            {/* F1 & IoU promoted as primary metrics */}
             <div className="grid grid-cols-2 gap-2">
+              <div className="col-span-2 rounded-lg border-2 border-teal-500/40 bg-teal-950/30 p-2 text-center">
+                <p className="text-[10px] text-teal-300 font-semibold uppercase tracking-wide">Primary Metrics (flood detection)</p>
+                <div className="flex justify-around mt-1">
+                  <div><p className="text-[10px] text-[var(--text-tertiary)]">F1 Score</p><p className="font-mono text-sm font-bold text-teal-300">{fmt(valStats.flood_accuracy.f1, 1)}%</p></div>
+                  <div><p className="text-[10px] text-[var(--text-tertiary)]">IoU</p><p className="font-mono text-sm font-bold text-teal-300">{fmt(valStats.flood_accuracy.iou, 1)}%</p></div>
+                </div>
+              </div>
               <MetricCard label="Precision" value={fmt(valStats.flood_accuracy.precision, 1)} unit="%" />
               <MetricCard label="Recall"    value={fmt(valStats.flood_accuracy.recall, 1)}    unit="%" />
-              <MetricCard label="F1 Score"  value={fmt(valStats.flood_accuracy.f1, 1)}         unit="%" />
-              <MetricCard label="IoU"       value={fmt(valStats.flood_accuracy.iou, 1)}         unit="%" />
+              {valStats.flood_accuracy.balanced_acc != null && (
+                <MetricCard label="Balanced Accuracy" value={fmt(valStats.flood_accuracy.balanced_acc, 1)} unit="%" />
+              )}
+              {valStats.flood_accuracy.mcc != null && (
+                <MetricCard label="MCC" value={fmt(valStats.flood_accuracy.mcc, 3)} unit="" />
+              )}
             </div>
             <div className="space-y-2">
-              <MetricCard label="Vegetation Agreement" value={fmt(valStats.veg_agreement_pct, 1)} unit="%" />
-              <MetricCard label="Overall Accuracy" value={fmt(valStats.flood_accuracy.oa, 1)} unit="%" />
+              <MetricCard label="Vegetation Agreement (S2 vs L8)" value={fmt(valStats.veg_agreement_pct, 1)} unit="%" />
+              <MetricCard label="Overall Accuracy (class-imbalanced)" value={fmt(valStats.flood_accuracy.oa, 1)} unit="%" />
             </div>
             {/* Confusion matrix summary */}
             <div className="rounded border border-[var(--border-subtle)] p-2 text-[10px] font-mono">
-              <p className="mb-1 text-[var(--text-secondary)] font-sans font-semibold">Confusion Matrix Summary</p>
+              <p className="mb-1 text-[var(--text-secondary)] font-sans font-semibold">Confusion Matrix</p>
               <div className="grid grid-cols-2 gap-x-3 gap-y-0.5">
                 <span className="text-green-400">TP {(valStats.flood_accuracy.tp ?? 0).toLocaleString()}</span>
                 <span className="text-red-400">FP {(valStats.flood_accuracy.fp ?? 0).toLocaleString()}</span>
@@ -358,7 +399,7 @@ export function SidebarRight({
               </div>
             </div>
             <p className="text-[10px] text-[var(--text-tertiary)] leading-snug bg-teal-950/20 border border-teal-500/20 rounded p-2">
-              ℹ️ <span className="font-semibold text-teal-300">Methodological Note:</span> Overall Accuracy is dominated by True Negative pixels because flooded pixels represent a very small proportion of the study area.
+              ℹ️ <span className="font-semibold text-teal-300">Class imbalance note:</span> Overall Accuracy is dominated by True Negative pixels because flooded pixels represent a very small proportion of the study area. F1-score and IoU are the primary flood-detection performance indicators.
             </p>
           </div>
         )}
@@ -368,11 +409,11 @@ export function SidebarRight({
         {meteorologyStats ? (
           <div className="space-y-4">
             <div>
-              <p className="mb-1 text-xs text-[var(--text-secondary)] font-semibold">Wind Speed (Hourly)</p>
+              <p className="mb-1 text-xs text-[var(--text-secondary)] font-semibold">ERA5 10m Wind Speed (m/s) — event period</p>
               <SVGChart data={meteorologyStats.series.wind} strokeColor="#3b82f6" />
             </div>
             <div>
-              <p className="mb-1 text-xs text-[var(--text-secondary)] font-semibold">Daily Rainfall (CHIRPS)</p>
+              <p className="mb-1 text-xs text-[var(--text-secondary)] font-semibold">CHIRPS Daily Rainfall (mm/day)</p>
               <SVGChart data={meteorologyStats.series.rain} strokeColor="#10b981" />
             </div>
           </div>
@@ -383,7 +424,7 @@ export function SidebarRight({
         {/* Module 4 – Top district rainfall */}
         {trackStats && trackStats.districtRainfall.length > 0 && (
           <div className="mt-4">
-            <p className="mb-1 text-xs text-[var(--text-secondary)] font-semibold">Top Districts — Rainfall (mm)</p>
+            <p className="mb-1 text-xs text-[var(--text-secondary)] font-semibold">Top Districts — Accumulated Rainfall (mm)</p>
             <BarChart data={trackStats.districtRainfall.slice(0, 10).map(d => ({ name: d.name, value: d.max }))} color="#3b82f6" />
           </div>
         )}
@@ -407,7 +448,8 @@ export function SidebarRight({
         {/* Module 7 – Worst damaged districts by dNDVI */}
         {vegStats && vegStats.districts.length > 0 && (
           <div className="mt-4">
-            <p className="mb-1 text-xs text-[var(--text-secondary)] font-semibold">Worst Districts — ΔNDVI (Veg Loss)</p>
+            <p className="mb-0.5 text-xs text-[var(--text-secondary)] font-semibold">Top Districts — Vegetation Loss Magnitude (|ΔNDVI|)</p>
+            <p className="mb-1 text-[9px] text-[var(--text-tertiary)]">Higher = more vegetation loss (ΔNDVI = Post − Pre, negative = loss)</p>
             <BarChart
               data={vegStats.districts.slice(0, 10).map(d => ({
                 name: d.name,
@@ -444,7 +486,8 @@ export function SidebarRight({
         {/* Module 10 – District multi-hazard risk ranking */}
         {mhStats && mhStats.district_ranking.length > 0 && (
           <div className="mt-4">
-            <p className="mb-1 text-xs text-[var(--text-secondary)] font-semibold">⚠️ District Multi-Hazard Ranking (Top 10)</p>
+            <p className="mb-0.5 text-xs text-[var(--text-secondary)] font-semibold">Composite Multi-Hazard Index (MHI) — Top 10 Districts</p>
+            <p className="mb-1 text-[9px] text-[var(--text-tertiary)]">MHI ≠ District Hazard Index. See methodology note above.</p>
             <BarChart
               data={mhStats.district_ranking.slice(0, 10).map(d => ({
                 name:  d.name,
@@ -469,9 +512,12 @@ export function SidebarRight({
         )}
       </Section>
 
-      <Section title="Affected districts">
+      <Section title="Districts Intersecting Cyclone Impact Zone">
         {studyArea ? (
           <>
+            <p className="mb-1 text-[10px] text-[var(--text-tertiary)] leading-snug bg-sky-950/20 border border-sky-500/20 rounded p-1.5">
+              Criterion: district boundary intersects the study geometry. Not all districts experienced direct physical damage.
+            </p>
             <ul className="max-h-40 space-y-1 overflow-y-auto text-[var(--text-secondary)]">
               {studyArea.stats.districtNames.map((d) => (
                 <li key={d} className="border-b border-[var(--border-subtle)]/50 py-0.5">{d}</li>
@@ -509,8 +555,8 @@ export function SidebarRight({
           if (hazardStats?.surge?.max && hazardStats.surge.max > 0.1) {
             alerts.push({
               type: 'danger',
-              title: 'Storm Surge Warning',
-              desc: `Coastal surge index reaches peak of ${fmt(hazardStats.surge.max, 3)} in coastal zone.`,
+              title: 'Coastal Susceptibility Alert',
+              desc: `Storm-surge susceptibility index reaches ${fmt(hazardStats.surge.max, 3)} in coastal zone. Note: this is a GIS-based susceptibility proxy, not a measured storm surge.`,
             });
           }
 
@@ -570,21 +616,33 @@ export function SidebarRight({
             {/* Cyclone meta */}
             <div className="rounded border border-[var(--border-subtle)] p-2 text-[10px]">
               <p className="mb-1 text-xs font-semibold text-emerald-400">📋 {syncReport.meta.cyclone_name} — Report</p>
-              <div className="space-y-0.5 font-mono text-[var(--text-secondary)]">
-                <p>Landfall: {syncReport.meta.landfall_place} · {syncReport.meta.landfall_date}</p>
-                <p>Category: {syncReport.meta.category} · Peak: {syncReport.meta.peak_wind_kmh} km/h</p>
-                <p className="text-[var(--text-tertiary)]">Generated: {new Date(syncReport.meta.generated_at).toLocaleTimeString()}</p>
+              <div className="space-y-1 text-[var(--text-secondary)]">
+                <p className="font-mono">Landfall: {syncReport.meta.landfall_place} · {syncReport.meta.landfall_date}</p>
+                {/* IMD official classification */}
+                {reportSummary?.meta?.imd_classification && (
+                  <div className="rounded border border-amber-500/30 bg-amber-950/20 p-1.5">
+                    <p className="text-amber-300 font-semibold">IMD/RSMC Classification (Official)</p>
+                    <p className="font-mono">{reportSummary.meta.imd_classification}</p>
+                    {reportSummary.meta.imd_peak_kt_approx && <p className="font-mono">~{reportSummary.meta.imd_peak_kt_approx} kt · ~{reportSummary.meta.imd_min_pres_hpa} hPa</p>}
+                  </div>
+                )}
+                {/* IBTrACS classification */}
+                <div className="rounded border border-sky-500/30 bg-sky-950/20 p-1.5">
+                  <p className="text-sky-300 font-semibold">IBTrACS/JTWC Classification</p>
+                  <p className="font-mono">{syncReport.meta.category} · {syncReport.meta.peak_wind_kmh} km/h ({reportSummary?.meta?.ibtracks_peak_kt ?? '—'} kt)</p>
+                </div>
+                <p className="text-[var(--text-tertiary)] font-mono text-[9px]">Generated: {new Date(syncReport.meta.generated_at).toLocaleTimeString()}</p>
               </div>
             </div>
             {/* Key metrics grid */}
             <div className="space-y-1.5">
-              <MetricCard label="Population inside Cyclone Impact Zone" value={fmt((syncReport.population?.total ?? 0) / 1e6, 2)} unit="M" />
+              <MetricCard label="Population in Impact Zone (GPW 2020)" value={fmt((syncReport.population?.total ?? 0) / 1e6, 2)} unit="M" />
               <div className="grid grid-cols-2 gap-1.5">
-                <MetricCard label="Max Rainfall"  value={fmt(syncReport.rainfall?.max_mm, 0)}               unit="mm" />
-                <MetricCard label="Flooded Area"  value={fmt(syncReport.flood?.flooded_area_km2, 0)}         unit="km²" />
+                <MetricCard label="Max Accumulated Rainfall"  value={fmt(syncReport.rainfall?.max_mm, 0)}               unit="mm" />
+                <MetricCard label="SAR Flood Area"  value={fmt(syncReport.flood?.flooded_area_km2, 0)}         unit="km²" />
                 <MetricCard label="Veg Damaged"   value={fmt(syncReport.vegetation?.damaged_area_km2, 0)}    unit="km²" />
-                <MetricCard label="Mean Hazard"   value={fmt(syncReport.hazard?.mean_index, 3)}              unit="" />
-                <MetricCard label="Pop Flooded"   value={fmt(syncReport.population?.pct_flooded, 1)}         unit="%" />
+                <MetricCard label="Mean Hazard Index"   value={fmt(syncReport.hazard?.mean_index, 3)}              unit="" />
+                <MetricCard label="Pop Flood-Exposed"   value={fmt(syncReport.population?.pct_flooded, 1)}         unit="%" />
               </div>
             </div>
             {/* Top 5 hazard districts */}
@@ -602,6 +660,28 @@ export function SidebarRight({
                     </li>
                   ))}
                 </ol>
+              </div>
+            )}
+            {/* Data Sources compact panel */}
+            {reportSummary?.data_sources && (
+              <div className="rounded border border-[var(--border-subtle)] p-2 text-[10px]">
+                <p className="mb-1 font-semibold text-[var(--text-secondary)] uppercase tracking-wide">Data Sources</p>
+                <div className="space-y-0.5">
+                  {Object.entries(reportSummary.data_sources).map(([key, value]) => (
+                    <p key={key} className="text-[var(--text-tertiary)] leading-snug">
+                      <span className="text-[var(--text-secondary)] font-medium">{key.replace(/_/g, ' ')}:</span> {value}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            )}
+            {/* Limitations */}
+            {reportSummary?.limitations && (
+              <div className="rounded border border-amber-500/20 bg-amber-950/10 p-2 text-[10px]">
+                <p className="mb-1 font-semibold text-amber-300 uppercase tracking-wide">⚠️ Methodological Limitations</p>
+                <ul className="space-y-0.5 list-disc list-inside text-[var(--text-tertiary)] leading-snug">
+                  {reportSummary.limitations.map((lim, i) => <li key={i}>{lim}</li>)}
+                </ul>
               </div>
             )}
             {/* CSV download */}

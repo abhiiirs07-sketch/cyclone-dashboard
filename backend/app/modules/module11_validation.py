@@ -196,26 +196,34 @@ def get_validation_stats(cyclone_name: str) -> dict:
     oa        = (tp + tn) / total if total > 0 else 0
     iou       = tp / (tp + fp + fn) if (tp + fp + fn) > 0 else 0
 
-    mae  = round(abs(1.0 - (precision or 0.92)), 3)
-    rmse = round((abs(1.0 - (f1 or 0.90))) ** 0.5, 3)
-    r2   = round((f1 or 0.90) ** 2, 2)
+    # Balanced Accuracy: average of sensitivity and specificity
+    # Robust to class imbalance unlike Overall Accuracy
+    sensitivity = tp / (tp + fn) if (tp + fn) > 0 else 0  # = recall
+    specificity  = tn / (tn + fp) if (tn + fp) > 0 else 0
+    balanced_acc = (sensitivity + specificity) / 2
+
+    # Matthews Correlation Coefficient (MCC): single metric accounting for all 4 cells
+    mcc_denom = ((tp + fp) * (tp + fn) * (tn + fp) * (tn + fn)) ** 0.5
+    mcc = (tp * tn - fp * fn) / mcc_denom if mcc_denom > 0 else 0
 
     return {
         'flood_accuracy': {
-            'samples':   int(total) if total > 0 else 1250,
-            'tp':        int(tp),
-            'fp':        int(fp),
-            'fn':        int(fn),
-            'tn':        int(tn),
-            'precision': round(precision * 100, 1) if precision > 0 else 91.8,
-            'recall':    round(recall * 100, 1) if recall > 0 else 93.1,
-            'f1':        round(f1 * 100, 1) if f1 > 0 else 92.4,
-            'oa':        round(oa * 100, 1) if oa > 0 else 92.4,
-            'iou':       round(iou * 100, 1) if iou > 0 else 85.9,
-            'mae':       mae,
-            'rmse':      rmse,
-            'r2':        r2,
+            'samples':          int(total),
+            'tp':               int(tp),
+            'fp':               int(fp),
+            'fn':               int(fn),
+            'tn':               int(tn),
+            'precision':        round(precision * 100, 1),
+            'recall':           round(recall * 100, 1),
+            'f1':               round(f1 * 100, 1),
+            'oa':               round(oa * 100, 1),
+            'iou':              round(iou * 100, 1),
+            'balanced_acc':     round(balanced_acc * 100, 1),
+            'mcc':              round(mcc, 3),
+            # Reference and prediction sources
+            'prediction':       'Sentinel-1 SAR flood mask (VV backscatter threshold)',
+            'reference':        'Landsat-8/9 MNDWI > 0.2 (post-event optical water mask)',
         },
-        'veg_agreement_pct': round(veg_val * 100, 1) if veg_val > 0 else 89.5,
+        'veg_agreement_pct': round(veg_val * 100, 1),
         'districts': [],
     }

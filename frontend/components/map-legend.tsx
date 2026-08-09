@@ -34,31 +34,31 @@ export function MapLegend({ visibleLayers }: MapLegendProps) {
 function getSourceAndDate(key: string): { source: string; date?: string } {
   const k = key.toLowerCase();
   if (k.includes('wind') || k.includes('temp') || k.includes('humidity') || k.includes('pres')) {
-    return { source: 'ERA5 Reanalysis', date: 'Hourly Event Window' };
+    return { source: 'ERA5 Reanalysis (~28 km)', date: 'Hourly Event Window' };
   }
-  if (k.includes('rain') || k.includes('precipitation')) {
-    return { source: 'CHIRPS Daily', date: 'Accumulated Event Window' };
+  if (k.includes('rain') || k.includes('precipitation') || k.includes('chirps')) {
+    return { source: 'CHIRPS Daily (~5.6 km)', date: 'Accumulated Event Window' };
   }
-  if (k.includes('flood') || k.includes('sar')) {
-    return { source: 'Sentinel-1 SAR', date: '10m Resolution (VV Polarised)' };
+  if (k.includes('sar') || k === 'floodextent' || k === 'flooddepth' || k.includes('flood')) {
+    return { source: 'Sentinel-1 SAR (10 m, IW mode VV)', date: 'SAR signal — not a depth model' };
   }
   if (k.includes('ndvi') || k.includes('nbr') || k.includes('veg') || k.includes('damage')) {
-    return { source: 'Sentinel-2 MSI', date: '10m Resolution (Pre vs Post)' };
+    return { source: 'Sentinel-2 MSI SR (10 m)', date: 'ΔNDVI = Post − Pre · Negative = loss' };
   }
   if (k.includes('pop') || k.includes('density') || k.includes('vuln')) {
-    return { source: 'CIESIN GPW v4.11', date: '2020 Estimate (1 km)' };
+    return { source: 'CIESIN GPW v4.11 (2020)', date: '~1 km — 2020 estimate (not 2019)' };
   }
   if (k.includes('landcover') || k.includes('lc') || k.includes('lulc')) {
-    return { source: 'ESA WorldCover v200', date: '10m Resolution (2021)' };
+    return { source: 'ESA WorldCover v200 (10 m)', date: '2021 categorical land cover' };
   }
   if (k.includes('elevation') || k.includes('slope') || k.includes('hillshade') || k.includes('dem')) {
-    return { source: 'Copernicus GLO-30 DEM', date: '30m Resolution' };
+    return { source: 'SRTM GL1 / GLO-30 (30 m)', date: 'Digital Elevation Model' };
   }
   if (k.includes('coast') || k.includes('surge')) {
-    return { source: 'NOAA ETOPO1 / GEE', date: 'Bathymetric Slope & Distance' };
+    return { source: 'Surge Susceptibility Index', date: 'GIS proxy — NOT hydrodynamic model' };
   }
   if (k.includes('hazard') || k.includes('mh')) {
-    return { source: 'Integrated Risk Model', date: 'Odisha Coastal Assessment' };
+    return { source: 'Composite Risk Model', date: 'Terrain/LULC/Population weighted' };
   }
   return { source: 'Google Earth Engine' };
 }

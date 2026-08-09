@@ -119,13 +119,16 @@ def get_report_summary(cyclone_name: str) -> dict:
         if isinstance(f, dict) and 'properties' in f
     ]
 
-    # Track stats for category & peak wind
+    # Track stats for category & peak wind (IBTrACS/JTWC source)
+    peak_kt = 150  # default
+    tr_stats = {}
     try:
         tr_stats = get_track_stats(cyclone_name)
         cat_str  = tr_stats.get('track', {}).get('category', 'Cat 5')
         peak_kt  = tr_stats.get('track', {}).get('max_wind_kt', 150)
         peak_kmh = round(peak_kt * 1.852)
     except Exception:
+        tr_stats = {}
         cat_str  = 'Cat 5'
         peak_kmh = 278
 
@@ -135,35 +138,76 @@ def get_report_summary(cyclone_name: str) -> dict:
     tp = list(total_pop.values())[0] if total_pop else 0
     fp_val = list(flooded_pop.values())[0] if flooded_pop else 0
 
+    # IMD/RSMC New Delhi official classification lookup
+    IMD_CLASSIFICATION = {
+        'Fani':   {'imd_class': 'Extremely Severe Cyclonic Storm (ESCS)', 'imd_peak_kt': 115, 'imd_min_pres_hpa': 932},
+        'Amphan': {'imd_class': 'Super Cyclonic Storm (SuCS)',            'imd_peak_kt': 130, 'imd_min_pres_hpa': 920},
+    }
+    imd_info = IMD_CLASSIFICATION.get(cyclone_name, {})
+
     return {
         'meta': {
-            'cyclone_name':   cyclone_name,
-            'landfall_place': cyclone.get('landfall', 'Puri'),
-            'landfall_date':  cyclone.get('date', '2019-05-03'),
-            'category':       cat_str,
-            'peak_wind_kmh':  peak_kmh,
-            'generated_at':   datetime.utcnow().isoformat() + 'Z',
+            'cyclone_name':       cyclone_name,
+            'landfall_place':     cyclone.get('landfall', 'Puri'),
+            'landfall_date':      cyclone.get('date', '2019-05-03'),
+            # IBTrACS/JTWC classification
+            'category':           cat_str,
+            'ibtracks_peak_kt':   int(peak_kt),
+            'peak_wind_kmh':      peak_kmh,
+            # IMD/RSMC New Delhi official classification (separate from IBTrACS)
+            'imd_classification': imd_info.get('imd_class', 'See IMD/RSMC New Delhi bulletin'),
+            'imd_peak_kt_approx': imd_info.get('imd_peak_kt'),
+            'imd_min_pres_hpa':   imd_info.get('imd_min_pres_hpa'),
+            'generated_at':       datetime.utcnow().isoformat() + 'Z',
         },
         'rainfall': {
-            'mean_mm': round(rain_stats.get('precipitation_mean') or rain_stats.get('unknownBand1_mean', 0), 1),
-            'max_mm':  round(rain_stats.get('precipitation_max')  or rain_stats.get('unknownBand1_max', 0), 1),
+            'mean_mm':         round(rain_stats.get('precipitation_mean') or rain_stats.get('unknownBand1_mean', 0), 1),
+            'mean_mm_per_day': round(rain_stats.get('precipitation_mean') or rain_stats.get('unknownBand1_mean', 0), 1),
+            'max_mm':          round(rain_stats.get('precipitation_max')  or rain_stats.get('unknownBand1_max', 0), 1),
         },
         'flood': {
             'flooded_area_km2': round((fa or 0) / 1e6, 1),
+            'method': 'Sentinel-1 SAR VV backscatter threshold (SAR flood signal, not a depth model)',
         },
         'hazard': {
-            'mean_index': round(hazard_stats.get('mean') or hazard_stats.get('HazardIndex_mean', 0) or 0.157, 3),
-            'max_index':  round(hazard_stats.get('max')  or hazard_stats.get('HazardIndex_max',  0) or 0.450, 3),
+            'mean_index': round(hazard_stats.get('mean') or hazard_stats.get('HazardIndex_mean', 0) or 0, 3),
+            'max_index':  round(hazard_stats.get('max')  or hazard_stats.get('HazardIndex_max',  0) or 0, 3),
+            'note': 'District Hazard Index (terrain/surge susceptibility/LULC/population components)',
         },
         'vegetation': {
             'damaged_area_km2': round((vd or 0) / 1e6, 1),
+            'method': 'Sentinel-2 ΔNDVI (Post−Pre) classification, 10 m, QA60 cloud-masked',
         },
         'population': {
             'total':       int(tp or 0),
             'flooded':     int(fp_val or 0),
             'pct_flooded': round((fp_val / tp * 100) if tp else 0, 1),
+            'baseline':    'GPW v4.11 (2020) — not exact 2019 population',
         },
         'top_hazard_districts': top_districts,
+        'data_sources': {
+            'cyclone_track':    'IBTrACS v4 (NOAA)',
+            'imd_official':     'IMD/RSMC New Delhi operational bulletins',
+            'meteorology':      'ERA5 Hourly (ECMWF) — ~28 km native resolution',
+            'rainfall':         'CHIRPS Daily (UCSB/CHG) — ~5.6 km native resolution',
+            'flood_detection':  'Sentinel-1 SAR GRD (ESA/Copernicus) — 10 m IW mode VV',
+            'vegetation':       'Sentinel-2 MSI SR Harmonized (ESA/Copernicus) — 10 m',
+            'land_cover':       'ESA WorldCover v200 (ESA) — 10 m categorical',
+            'population':       'GPW v4.11 (CIESIN/Columbia University) — 2020 estimate',
+            'elevation':        'SRTM GL1 (USGS/NASA) — 30 m / ETOPO1 (NOAA) for bathymetry',
+            'flood_validation':  'Landsat-8/9 MNDWI (USGS) — 30 m post-event optical reference',
+        },
+        'limitations': [
+            'SAR flood detection (backscatter threshold) is not equivalent to flood depth measurement. No hydraulic model or DEM-based depth inversion was applied.',
+            'Coastal storm-surge susceptibility is a GIS-based proxy (terrain/bathymetry/distance). It is NOT a hydrodynamic storm-surge inundation simulation.',
+            'GPW v4.11 population data is a 2020 estimate and does not represent exact 2019 population at time of landfall.',
+            'ERA5 reanalysis data has ~28 km native spatial resolution. It represents area-averaged atmospheric conditions and should not be interpreted as point observations.',
+            'CHIRPS rainfall data has ~5.6 km native spatial resolution, significantly coarser than Sentinel imagery.',
+            'Vegetation damage is inferred from spectral change (ΔNDVI, ΔNBR) and should not be interpreted as direct field-measured crop or forest destruction.',
+            'Flood validation metrics are strongly affected by class imbalance (flooded pixels << non-flooded pixels). Overall Accuracy is not the primary performance indicator; F1-score and IoU are preferred.',
+            'IBTrACS/JTWC intensity values may differ from IMD/RSMC New Delhi operational estimates. Both are presented separately.',
+            'The composite Multi-Hazard Index (MHI) and the District Hazard Index are different indices and should not be compared directly.',
+        ],
     }
 
 

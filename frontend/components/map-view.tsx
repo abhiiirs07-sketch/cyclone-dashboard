@@ -123,6 +123,14 @@ export function MapView({
     });
     map.addControl(new maplibregl.NavigationControl(), 'top-right');
     map.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-left');
+    map.on('error', (e) => {
+      // Gracefully catch transient GEE 503/504 tile timeouts so dev overlay is not triggered
+      const msg = e.error?.message || String(e.error || '');
+      if (msg.includes('503') || msg.includes('504') || msg.includes('AJAXError')) {
+        // Transient GEE tile timeout -- MapLibre will automatically re-render on pan/zoom
+        return;
+      }
+    });
     map.on('load', () => setStyleReady(true));
     mapRef.current = map;
     return () => { map.remove(); mapRef.current = null; };

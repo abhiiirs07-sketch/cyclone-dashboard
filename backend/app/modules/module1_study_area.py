@@ -110,7 +110,7 @@ def _rasterize_layers(*, india, india_states, india_districts, reporting_area,
             .style(color="FFFF00", pointSize=8).getMapId({}),
         "affectedDistricts": outline_fill(affected_districts, "FFFF00", "FFFF0033", 2),
         "studyArea": outline_fill(
-            ee.FeatureCollection([ee.Feature(clipped_study_area)]), "00FFFF", "00FFFF33", 2
+            ee.FeatureCollection([ee.Feature(clipped_study_area)]), "00FFFF", "00000000", 2
         ),
         "reportingArea": outline_fill(
             ee.FeatureCollection([ee.Feature(reporting_area)]), "FFFF00", width=2

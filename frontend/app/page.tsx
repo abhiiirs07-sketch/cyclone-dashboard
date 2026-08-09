@@ -90,13 +90,6 @@ export default function DashboardPage() {
     setVisibleLayers(new Set(DEFAULT_VISIBLE_LAYERS));
   }
 
-  if (!mounted) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-[#0a0e14] text-cyan-400 font-mono text-xs select-none">
-        <span className="animate-pulse">⏳ Loading Dashboard modules…</span>
-      </div>
-    );
-  }
 
   return (
     <div className="flex h-screen flex-col bg-[var(--surface-0)] text-[var(--text-primary)]">

@@ -109,12 +109,15 @@ def _build_hazard(cyclone_name: str) -> dict:
     hazard_index = (surge_display.multiply(0.55)
                     .add(pop_risk.multiply(0.25))
                     .add(lc_risk.multiply(0.20))
+                    .clip(hazard_area)
                     .rename('HazardIndex'))
 
-    hazard_class = hazard_index.expression(
+    hazard_class = (hazard_index.expression(
         '(b<=0.2)?1:(b<=0.4)?2:(b<=0.6)?3:(b<=0.8)?4:5',
         {'b': hazard_index}
-    ).rename('HazardClass')
+    ).updateMask(hazard_index.gt(0))
+     .clip(hazard_area)
+     .rename('HazardClass'))
 
     surge_class = (
         surge_index.expression(
@@ -172,8 +175,8 @@ def get_hazard_layers(cyclone_name: str) -> dict:
         'surgeClass':      (t['surge_class'],      {'min': 1,   'max': 5,   'palette': GREEN_RED}),
         'populationRisk':  (t['pop_risk'],         {'min': 0,   'max': 1,   'palette': 'FFFFFF,99CCFF,0066CC,000066'}),
         'landCoverRisk':   (t['lc_risk'],          {'min': 0,   'max': 1,   'palette': GREEN_RED}),
-        'hazardIndex':     (t['hazard_index'],     {'min': 0,   'max': 1,   'palette': GREEN_RED}),
-        'hazardClass':     (t['hazard_class'],     {'min': 1,   'max': 5,   'palette': GREEN_RED}),
+        'hazardIndex':     (t['hazard_index'].updateMask(t['hazard_index'].gt(0)), {'min': 0,   'max': 1,   'palette': GREEN_RED}),
+        'hazardClass':     (t['hazard_class'].updateMask(t['hazard_index'].gt(0)), {'min': 1,   'max': 5,   'palette': GREEN_RED}),
     }
 
     def _get_tile(name_img_vis):

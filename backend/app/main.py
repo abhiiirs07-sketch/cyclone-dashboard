@@ -5,8 +5,9 @@ import threading
 from pathlib import Path
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from app.data.cyclone_db import CYCLONE_DB, CYCLONE_DATES
 from app.ee_client import EENotConfiguredError, ensure_initialized
@@ -44,6 +45,20 @@ app.add_middleware(
     allow_methods=["GET", "DELETE"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def no_cache_gee(request: Request, call_next):
+    """Force browsers to never cache ANY module endpoint.
+    Every module response can contain GEE tile URLs that expire in ~2h,
+    so no response from /api/modules/ should ever be served from browser cache.
+    """
+    response = await call_next(request)
+    if "/api/modules/" in request.url.path or "/api/modules" in request.url.path:
+        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+    return response
 
 
 # Local caching configuration
@@ -302,7 +317,8 @@ def clear_all_cache():
 
 @app.get("/api/modules/1/study-area/{cyclone_name}")
 def study_area(cyclone_name: str):
-    return _safe_run("study_area", cyclone_name, module1_study_area.get_study_area)
+    # use_ttl=True because study_area contains GEE tile URLs that expire in ~2h
+    return _safe_run("study_area", cyclone_name, module1_study_area.get_study_area, use_ttl=True)
 
 
 # ---------------------------------------------------------------------------

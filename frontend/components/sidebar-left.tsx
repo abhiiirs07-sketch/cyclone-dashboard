@@ -34,8 +34,10 @@ const TRACK_LAYERS = [
   { key: 'rainfallFootprint', label: 'Rainfall Footprint' },
 ];
 const FLOOD_LAYERS = [
-  { key: 'floodExtent', label: 'Flood Extent (SAR)' }, { key: 'floodDepth', label: 'Flood Depth Proxy' },
-  { key: 'sarPre', label: 'SAR Pre-event' }, { key: 'sarPost', label: 'SAR Post-event' }, { key: 'sarDiff', label: 'SAR Backscatter Diff' },
+  { key: 'sarPre',      label: '📡 SAR Pre-event (VV dB)' },
+  { key: 'sarPost',     label: '📡 SAR Post-event (VV dB)' },
+  { key: 'sarDiff',     label: '📡 SAR ΔVV (Post − Pre)' },
+  { key: 'floodExtent', label: '🌊 SAR Flood Extent (binary)' },
 ];
 const HAZARD_LAYERS = [
   { key: 'hazardIndex', label: '🔴 Composite Hazard Index' }, { key: 'hazardClass', label: '🔴 Hazard Class (1-5)' },
@@ -47,7 +49,7 @@ const HAZARD_LAYERS = [
   { key: 'populationRisk', label: 'Population Risk' }, { key: 'landCoverRisk', label: 'Land Cover Risk' },
 ];
 const VEG_LAYERS = [
-  { key: 'damageClass', label: '🌿 Damage Class (1-4)' }, { key: 'dNDVI', label: '🌿 ΔNDVI (Veg Change)' },
+  { key: 'damageClass', label: '🌿 Damage Class (Mutually Exclusive)' }, { key: 'dNDVI', label: '🌿 ΔNDVI (Post − Pre)' },
   { key: 'dNBR', label: 'ΔNBR (Burn Ratio)' }, { key: 'preNDVI', label: 'NDVI Pre-event' }, { key: 'postNDVI', label: 'NDVI Post-event' },
 ];
 const LULC_LAYERS = [
@@ -76,7 +78,7 @@ const MODULE_ANALYSIS = [
   { label: 'M1 Study Area',    keys: ['studyArea','affectedDistricts','landfall','india','reportingArea','states','districts'] },
   { label: 'M2 Meteorology',   keys: ['peakWind','tempAnomaly','humidity','eventRainfall','rainSeverity','heavyRain','vHeavyRain'] },
   { label: 'M3 Track',         keys: ['cycloneTrack','corridor50km','corridor100km','corridor250km','rainfallFootprint'] },
-  { label: 'M5 Flood',         keys: ['floodExtent','floodDepth','sarPre','sarPost','sarDiff'] },
+  { label: 'M5 Flood',         keys: ['sarPre','sarPost','sarDiff','floodExtent'] },
   { label: 'M6 Hazard',        keys: ['hazardIndex','hazardClass','surgeIndex','surgeClass','elevation','slope','hillshade'] },
   { label: 'M7 Vegetation',    keys: ['damageClass','dNDVI','dNBR','preNDVI','postNDVI'] },
   { label: 'M8 LULC',          keys: ['landCover','lulcImpactScore','impactType','floodedLULC','damagedLULC'] },
