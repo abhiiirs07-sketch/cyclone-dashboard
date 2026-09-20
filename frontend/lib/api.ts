@@ -2,7 +2,11 @@
 
 import { useQuery } from '@tanstack/react-query';
 
-export const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000';
+export const API_BASE =
+  process.env.NEXT_PUBLIC_API_URL ||
+  (typeof window !== 'undefined' && !window.location.hostname.includes('localhost')
+    ? 'https://cyclone-dashboard1.vercel.app'
+    : 'http://localhost:8000');
 
 // ---- types (mirror backend/app/main.py response shapes exactly) ----
 
