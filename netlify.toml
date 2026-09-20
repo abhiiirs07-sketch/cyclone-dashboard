@@ -1,0 +1,21 @@
+[build]
+  base    = "frontend"
+  command = "npm run build"
+  publish = "out"
+
+[build.environment]
+  NEXT_PUBLIC_API_URL = "https://cyclone-dashboard1.vercel.app"
+
+[[headers]]
+  for = "/_next/static/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[redirects]]
+  from   = "/api/*"
+  to     = "https://cyclone-dashboard1.vercel.app/api/:splat"
+  status = 200
+  force  = true
+  [redirects.headers]
+    X-Forwarded-Host = "cyclone-dashboard-2025.netlify.app"
+    Access-Control-Allow-Origin = "*"

@@ -240,6 +240,16 @@ def _run_warmup():
 # Health & metadata
 # ---------------------------------------------------------------------------
 
+@app.get("/")
+def root():
+    return {
+        "name": "Cyclone Intelligence Dashboard API",
+        "status": "ok",
+        "health": "/api/health",
+        "docs": "/docs",
+    }
+
+
 @app.get("/api/ping")
 def ping():
     """Ultra-lightweight keep-alive endpoint — no EE call needed."""
