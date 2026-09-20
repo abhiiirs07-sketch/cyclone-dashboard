@@ -99,6 +99,22 @@ def _cache_path(endpoint: str, cyclone_name: str) -> Path:
     return path
 
 
+def _safe_unlink(p: Path):
+    try:
+        p.unlink(missing_ok=True)
+    except Exception:
+        pass
+
+
+def _safe_save(filename: str, data):
+    try:
+        target = CACHE_DIR / filename
+        with open(target, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+    except Exception:
+        pass
+
+
 def get_cached_response(endpoint: str, cyclone_name: str, compute_func):
     """
     Permanent cache for slow statistics (past cyclones never change).
@@ -109,22 +125,15 @@ def get_cached_response(endpoint: str, cyclone_name: str, compute_func):
         try:
             with open(path, "r", encoding="utf-8") as f:
                 data = json.load(f)
-            # Don't serve cached error responses
             if isinstance(data, dict) and data.get("error"):
-                path.unlink(missing_ok=True)
+                _safe_unlink(path)
             else:
                 return data
         except Exception:
-            path.unlink(missing_ok=True)
+            _safe_unlink(path)
 
     result = compute_func(cyclone_name)
-
-    try:
-        with open(path, "w", encoding="utf-8") as f:
-            json.dump(result, f, ensure_ascii=False, indent=2)
-    except Exception:
-        pass
-
+    _safe_save(f"{endpoint}_{cyclone_name.lower()}.json", result)
     return result
 
 
@@ -137,28 +146,17 @@ def get_cached_response_ttl(endpoint: str, cyclone_name: str, compute_func,
     path = _cache_path(endpoint, cyclone_name)
     if path.exists():
         try:
-            mtime = path.stat().st_mtime
-            if time.time() - mtime < ttl_seconds:
-                with open(path, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-                # Don't serve cached error responses
-                if isinstance(data, dict) and data.get("error"):
-                    path.unlink(missing_ok=True)
-                else:
-                    return data
+            with open(path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            if isinstance(data, dict) and data.get("error"):
+                _safe_unlink(path)
             else:
-                path.unlink(missing_ok=True)
+                return data
         except Exception:
-            path.unlink(missing_ok=True)
+            _safe_unlink(path)
 
     result = compute_func(cyclone_name)
-
-    try:
-        with open(path, "w", encoding="utf-8") as f:
-            json.dump(result, f, ensure_ascii=False, indent=2)
-    except Exception:
-        pass
-
+    _safe_save(f"{endpoint}_{cyclone_name.lower()}.json", result)
     return result
 
 
