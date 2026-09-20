@@ -1,0 +1,62 @@
+{
+  "stats": {
+    "districtCount": 19,
+    "districtNames": [
+      "East Godavari",
+      "Khammam",
+      "Krishna",
+      "Srikakulam",
+      "Vishakhapatnam",
+      "Vizianagaram",
+      "West Godavari",
+      "Ganjam",
+      "Kalahandi",
+      "Koraput",
+      "Gajapati",
+      "Kandhamal",
+      "Malkangiri",
+      "Nabarangpur",
+      "Rayagada",
+      "Bastar",
+      "Dantewada",
+      "Raipur",
+      "Yanam"
+    ],
+    "reportingArea_km2": 166665.77982951349,
+    "stateNames": [
+      "Andhra Pradesh",
+      "Orissa",
+      "Chhattisgarh",
+      "Puducherry"
+    ],
+    "studyArea_km2": 95517.91879084913,
+    "cyclone": "Hudhud",
+    "landfall": "Visakhapatnam",
+    "landfallDate": "2014-10-12",
+    "landfallLon": 83.3,
+    "landfallLat": 17.7
+  },
+  "layers": {
+    "india": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/e25448a6ce9c43a3880953c9116e1997-5b86cc2cde8e8ad3ba3a13e2559a4ec0/tiles/{z}/{x}/{y}"
+    },
+    "landfall": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/e935e3fded1a753382c072968a998284-f377fd82287263925dbdc079292b657d/tiles/{z}/{x}/{y}"
+    },
+    "affectedDistricts": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/da8888ad98bbf4c87d10957ae6e49629-8b136022fd9dbc22e4e14d523b9b7030/tiles/{z}/{x}/{y}"
+    },
+    "studyArea": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/95d7fc4f3512557881a1bc5b8c033cca-464e450f47bc1f486a2523a33f0a52d8/tiles/{z}/{x}/{y}"
+    },
+    "reportingArea": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/610855f72f37947a3a61fabcfe7baa13-63d9dc9cab3ef1817ecea64b0ea7ec9b/tiles/{z}/{x}/{y}"
+    },
+    "states": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/ece8d134c05f0282d4247037aa763735-ea6893a23f8dd28c8d975269913e8af8/tiles/{z}/{x}/{y}"
+    },
+    "districts": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/7a6a843798507e8444dbc157f8582a2b-146f038bf4d89857b4000d0e3fb1da1a/tiles/{z}/{x}/{y}"
+    }
+  }
+}

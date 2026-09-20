@@ -1,0 +1,69 @@
+{
+  "stats": {
+    "districtCount": 27,
+    "districtNames": [
+      "Pashchim Singhbhum",
+      "Sundargarh",
+      "Srikakulam",
+      "Vizianagaram",
+      "Cuttack",
+      "Dhenkanal",
+      "Ganjam",
+      "Kalahandi",
+      "Keonjhar",
+      "Mayurbhanj",
+      "Puri",
+      "Sambalpur",
+      "Angul",
+      "Baleshwar",
+      "Bhadrak",
+      "Bolangir",
+      "Boudh",
+      "Deogarh",
+      "Gajapati",
+      "Jagatsinghpur",
+      "Jajpur",
+      "Kandhamal",
+      "Kendrapara",
+      "Khordha",
+      "Nayagarh",
+      "Rayagada",
+      "Sonepur"
+    ],
+    "reportingArea_km2": 143760.72771179632,
+    "stateNames": [
+      "Jharkhand",
+      "Orissa",
+      "Andhra Pradesh"
+    ],
+    "studyArea_km2": 92025.41548743262,
+    "cyclone": "Fani",
+    "landfall": "Puri",
+    "landfallDate": "2019-05-03",
+    "landfallLon": 85.86,
+    "landfallLat": 19.81
+  },
+  "layers": {
+    "india": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/e25448a6ce9c43a3880953c9116e1997-65ab33244330fb36843cdf1111414558/tiles/{z}/{x}/{y}"
+    },
+    "landfall": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/183880bb504db7842560a32ee717c52d-526440fd15664c8653927f00fca8971b/tiles/{z}/{x}/{y}"
+    },
+    "affectedDistricts": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/594432dee5e5fdb3ff36d2ceed84fa56-6443bbee7e68d6b94bd96401c656df1a/tiles/{z}/{x}/{y}"
+    },
+    "studyArea": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/98bb025fbccbdf46f85a23da3f0dd05b-fcc72fc800d311ae9f456ccb19852b9f/tiles/{z}/{x}/{y}"
+    },
+    "reportingArea": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/e11580d36a9c9ee750679e8a21367078-5ad9adec0aa79c6a2476ff56df0a03a4/tiles/{z}/{x}/{y}"
+    },
+    "states": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/ece8d134c05f0282d4247037aa763735-b0962daf6510681b629a68c162c10111/tiles/{z}/{x}/{y}"
+    },
+    "districts": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/7a6a843798507e8444dbc157f8582a2b-90e74b8f9b441b70a4eb44e2bfa424c3/tiles/{z}/{x}/{y}"
+    }
+  }
+}

@@ -1,0 +1,107 @@
+{
+  "terrain": {
+    "elev_min": 0,
+    "elev_max": 1216,
+    "elev_mean": 238.5,
+    "lowland_km2": 10288.7
+  },
+  "hazard": {
+    "mean": 0.1788,
+    "max": 0.6973,
+    "std_dev": 0.1476
+  },
+  "surge": {
+    "mean": 0.1576,
+    "max": 0.645,
+    "area_km2": 21044.2
+  },
+  "districtHazard": [
+    {
+      "name": "Kendrapara",
+      "index": 0.444,
+      "level": "Moderate"
+    },
+    {
+      "name": "Jagatsinghpur",
+      "index": 0.424,
+      "level": "Moderate"
+    },
+    {
+      "name": "Puri",
+      "index": 0.405,
+      "level": "Moderate"
+    },
+    {
+      "name": "Bhadrak",
+      "index": 0.405,
+      "level": "Moderate"
+    },
+    {
+      "name": "Jajpur",
+      "index": 0.298,
+      "level": "Low"
+    },
+    {
+      "name": "Khordha",
+      "index": 0.278,
+      "level": "Low"
+    },
+    {
+      "name": "Cuttack",
+      "index": 0.265,
+      "level": "Low"
+    },
+    {
+      "name": "Srikakulam",
+      "index": 0.225,
+      "level": "Low"
+    },
+    {
+      "name": "Ganjam",
+      "index": 0.2,
+      "level": "Very Low"
+    },
+    {
+      "name": "Dhenkanal",
+      "index": 0.148,
+      "level": "Very Low"
+    },
+    {
+      "name": "Keonjhar",
+      "index": 0.14,
+      "level": "Very Low"
+    },
+    {
+      "name": "Nayagarh",
+      "index": 0.131,
+      "level": "Very Low"
+    },
+    {
+      "name": "Boudh",
+      "index": 0.121,
+      "level": "Very Low"
+    },
+    {
+      "name": "Angul",
+      "index": 0.103,
+      "level": "Very Low"
+    },
+    {
+      "name": "Kandhamal",
+      "index": 0.056,
+      "level": "Very Low"
+    }
+  ],
+  "stateHazard": [
+    {
+      "name": "Andhra Pradesh",
+      "mean": 0.223,
+      "max": 0.44
+    },
+    {
+      "name": "Orissa",
+      "mean": 0.176,
+      "max": 0.611
+    }
+  ]
+}

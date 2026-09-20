@@ -1,0 +1,55 @@
+{
+  "stats": {
+    "districtCount": 14,
+    "districtNames": [
+      "Junagadh",
+      "Porbandar",
+      "Banas Kantha",
+      "Mahesana",
+      "Patan",
+      "Ahmadabad",
+      "Amreli",
+      "Bhavnagar",
+      "Jamnagar",
+      "Kachchh",
+      "Rajkot",
+      "Surendranagar",
+      "Barmer",
+      "Jalor"
+    ],
+    "reportingArea_km2": 154290.28157795218,
+    "stateNames": [
+      "Gujarat",
+      "Rajasthan"
+    ],
+    "studyArea_km2": 92745.33805724932,
+    "cyclone": "Biparjoy",
+    "landfall": "Kutch",
+    "landfallDate": "2023-06-15",
+    "landfallLon": 69.9,
+    "landfallLat": 23.3
+  },
+  "layers": {
+    "india": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/e25448a6ce9c43a3880953c9116e1997-c60433a0f11456acdbfbc9014cba760d/tiles/{z}/{x}/{y}"
+    },
+    "landfall": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/6351686caacc5ca2bec0a7e35868e188-678b23b4e1166bd389b10fa93d8d14ef/tiles/{z}/{x}/{y}"
+    },
+    "affectedDistricts": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/17683838ece4ba50f516c31b48078c58-4d56779b70e916886ef613792989e078/tiles/{z}/{x}/{y}"
+    },
+    "studyArea": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/c7d602210e75c443a2ef0be60b750c1f-23e23cd589fb31af478c7559de6d4b31/tiles/{z}/{x}/{y}"
+    },
+    "reportingArea": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/b45b2b22a82fb70392c58aa2fdb45258-25ea46a82de5afbf7254eb1adfece0d4/tiles/{z}/{x}/{y}"
+    },
+    "states": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/ece8d134c05f0282d4247037aa763735-7d118d529bd847c855ede236fd1dd3fb/tiles/{z}/{x}/{y}"
+    },
+    "districts": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/7a6a843798507e8444dbc157f8582a2b-89df9b340e7b6ea8aa459a2ab3bd0dbd/tiles/{z}/{x}/{y}"
+    }
+  }
+}

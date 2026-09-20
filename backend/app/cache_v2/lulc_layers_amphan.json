@@ -1,0 +1,19 @@
+{
+  "layers": {
+    "landCover": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/46302fa581623e6f2b6808426acf30f6-a2b1f71ac14e88232843bafbd0a4ff35/tiles/{z}/{x}/{y}"
+    },
+    "impactType": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/df14ad4d9279b0a5c30147150523a007-5b8594206317140ec3433b64ecd3b179/tiles/{z}/{x}/{y}"
+    },
+    "lulcImpactScore": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/0bdc4aeda52fea5666ba6fb2844192ee-ae43a8d54639d6baea2fbb13ce9b416e/tiles/{z}/{x}/{y}"
+    },
+    "damagedLULC": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/64ea9322f608740d6f5e3d92a7605d2d-0eb488f858ec6b1f418725f8cc0fb655/tiles/{z}/{x}/{y}"
+    },
+    "floodedLULC": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/98954d98878f59c4b2c5020c27697cbb-71746c2fb2d128ac920684a6b94276bd/tiles/{z}/{x}/{y}"
+    }
+  }
+}

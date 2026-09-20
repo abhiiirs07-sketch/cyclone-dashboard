@@ -1,0 +1,19 @@
+{
+  "layers": {
+    "mndwi": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/2071a9be80ab2f345d1419f2ee08e059-eaf8426831f31ecd4cdd3151c69a83f2/tiles/{z}/{x}/{y}"
+    },
+    "optFlood": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/8aa4ef43b878562dfc9ee0ee9ec5ba35-5551d84053ce28db82a9848661e94c54/tiles/{z}/{x}/{y}"
+    },
+    "lsDNDVI": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/e58480fbb0c51f2dea3839809289c45f-80164af4bae90fda7ba9e0b1652b21f8/tiles/{z}/{x}/{y}"
+    },
+    "confusionMap": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/945ac2282d06f075d47655d7053ecebe-09b4762a66ac6aab641a96dbd9724e5d/tiles/{z}/{x}/{y}"
+    },
+    "vegAgreement": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/fca4d0cd08da4a7af187b90d080cd4b3-46d619239314be1901bb31230d3ce006/tiles/{z}/{x}/{y}"
+    }
+  }
+}

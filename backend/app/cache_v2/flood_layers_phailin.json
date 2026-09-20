@@ -1,0 +1,13 @@
+{
+  "layers": {
+    "sarPre": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/6c1dace2d79f5104ef49e05caa0999b2-8ea4035c100fc9c28de018713779d89c/tiles/{z}/{x}/{y}"
+    },
+    "sarPost": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/8e613e62e19275feea536df303a58c4e-1a453c2e0cab8473c44d7cb853bb61a9/tiles/{z}/{x}/{y}"
+    },
+    "sarDiff": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/3438e2511d2d134774b24a43fb98fa79-bcfba7c2308e70fa9b1c268737466d6d/tiles/{z}/{x}/{y}"
+    }
+  }
+}

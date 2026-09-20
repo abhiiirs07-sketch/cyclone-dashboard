@@ -1,0 +1,123 @@
+{
+  "summary": {
+    "total_pop": 4433973,
+    "flooded_pop": 41751,
+    "high_haz_pop": 8205,
+    "veg_dmg_pop": 38126,
+    "pct_flooded": 0.9,
+    "pct_high_haz": 0.2,
+    "max_density_km2": 23659.0,
+    "mean_vuln": 101.6
+  },
+  "hazard_exposure": {
+    "very_high": 3415,
+    "high": 4790,
+    "moderate": 1143110,
+    "low": 1905959,
+    "very_low": 1377437
+  },
+  "districts_total": [
+    {
+      "name": "Ganjam",
+      "pop": 545668
+    },
+    {
+      "name": "Cuttack",
+      "pop": 459101
+    },
+    {
+      "name": "Khordha",
+      "pop": 297445
+    },
+    {
+      "name": "Jajpur",
+      "pop": 281565
+    },
+    {
+      "name": "Keonjhar",
+      "pop": 258772
+    },
+    {
+      "name": "Puri",
+      "pop": 257637
+    },
+    {
+      "name": "Kendrapara",
+      "pop": 223784
+    },
+    {
+      "name": "Bhadrak",
+      "pop": 221726
+    },
+    {
+      "name": "Dhenkanal",
+      "pop": 200337
+    },
+    {
+      "name": "Angul",
+      "pop": 186899
+    },
+    {
+      "name": "Srikakulam",
+      "pop": 185432
+    },
+    {
+      "name": "Jagatsinghpur",
+      "pop": 165285
+    },
+    {
+      "name": "Nayagarh",
+      "pop": 138295
+    },
+    {
+      "name": "Kandhamal",
+      "pop": 119451
+    },
+    {
+      "name": "Boudh",
+      "pop": 71164
+    }
+  ],
+  "districts_flooded": [
+    {
+      "name": "Puri",
+      "pop": 10571
+    },
+    {
+      "name": "Boudh",
+      "pop": 8347
+    },
+    {
+      "name": "Khordha",
+      "pop": 2532
+    },
+    {
+      "name": "Jajpur",
+      "pop": 1554
+    },
+    {
+      "name": "Dhenkanal",
+      "pop": 34
+    },
+    {
+      "name": "Srikakulam",
+      "pop": 0
+    },
+    {
+      "name": "Cuttack",
+      "pop": 0
+    },
+    {
+      "name": "Ganjam",
+      "pop": 0
+    },
+    {
+      "name": "Keonjhar",
+      "pop": 0
+    },
+    {
+      "name": "Angul",
+      "pop": 0
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "flood_accuracy": {
+    "samples": 15787,
+    "tp": 7,
+    "fp": 205,
+    "fn": 122,
+    "tn": 15451,
+    "precision": 3.3,
+    "recall": 5.4,
+    "f1": 4.1,
+    "oa": 97.9,
+    "iou": 2.1,
+    "mae": 0.967,
+    "rmse": 0.979,
+    "r2": 0.0
+  },
+  "veg_agreement_pct": 95.8,
+  "districts": []
+}

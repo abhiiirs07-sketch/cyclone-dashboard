@@ -1,0 +1,31 @@
+{
+  "layers": {
+    "elevation": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/e994b2c912d5cad833d5a539f7604368-cfa625121260c595f9bb7b6ce23d9735/tiles/{z}/{x}/{y}"
+    },
+    "slope": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/68c643238dec4cb330f0f7490965ce63-c9fd62b8b5bc725f39ada298df30ced8/tiles/{z}/{x}/{y}"
+    },
+    "coastDistance": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/3fd3226fc2d2eff76b257cd4804fadde-23c95c6c6a4d34ee224a4a57ae9bf769/tiles/{z}/{x}/{y}"
+    },
+    "hillshade": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/6eb57e73d8e3f78acd96c94247f68702-bbb38b202e5fcebd80d902c39dbba6b5/tiles/{z}/{x}/{y}"
+    },
+    "coastalZone": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/8506dc06eb20b779df3bd726ca4ba900-a92207de979a54de8d4e1f8babed3027/tiles/{z}/{x}/{y}"
+    },
+    "rainRisk": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/ceb297195838d0e94571d958f1430032-23d3d6813e9d3e41fae7a59fd3a1c9a5/tiles/{z}/{x}/{y}"
+    },
+    "baseCoastalRisk": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/2d16e3344a284a0c110378df3b013a85-680e0c18f9f034c3b313829490ccb6d9/tiles/{z}/{x}/{y}"
+    },
+    "populationRisk": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/fe4f8f8401d977020f5aaf6e01381f9a-66e322eb95ebc80c6639c85719bce8f8/tiles/{z}/{x}/{y}"
+    },
+    "landCoverRisk": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/4b3a916dec97e602e4623867c2e71f0b-355bf1613de72d3b8cae87203c338cf8/tiles/{z}/{x}/{y}"
+    }
+  }
+}

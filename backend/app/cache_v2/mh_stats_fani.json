@@ -1,0 +1,112 @@
+{
+  "index": {
+    "mean": 0.144,
+    "min": 0.031,
+    "max": 0.45,
+    "stddev": 0.028
+  },
+  "class_areas": {
+    "Very Low": 89117.9,
+    "Low": 2598.0,
+    "Moderate": 116.7
+  },
+  "district_ranking": [
+    {
+      "name": "Kendrapara",
+      "score": 0.167,
+      "level": "Very Low",
+      "rank": 1
+    },
+    {
+      "name": "Cuttack",
+      "score": 0.165,
+      "level": "Very Low",
+      "rank": 2
+    },
+    {
+      "name": "Puri",
+      "score": 0.164,
+      "level": "Very Low",
+      "rank": 3
+    },
+    {
+      "name": "Khordha",
+      "score": 0.163,
+      "level": "Very Low",
+      "rank": 4
+    },
+    {
+      "name": "Jagatsinghpur",
+      "score": 0.162,
+      "level": "Very Low",
+      "rank": 5
+    },
+    {
+      "name": "Jajpur",
+      "score": 0.16,
+      "level": "Very Low",
+      "rank": 6
+    },
+    {
+      "name": "Bhadrak",
+      "score": 0.156,
+      "level": "Very Low",
+      "rank": 7
+    },
+    {
+      "name": "Ganjam",
+      "score": 0.147,
+      "level": "Very Low",
+      "rank": 8
+    },
+    {
+      "name": "Srikakulam",
+      "score": 0.145,
+      "level": "Very Low",
+      "rank": 9
+    },
+    {
+      "name": "Dhenkanal",
+      "score": 0.142,
+      "level": "Very Low",
+      "rank": 10
+    },
+    {
+      "name": "Boudh",
+      "score": 0.14,
+      "level": "Very Low",
+      "rank": 11
+    },
+    {
+      "name": "Nayagarh",
+      "score": 0.139,
+      "level": "Very Low",
+      "rank": 12
+    },
+    {
+      "name": "Keonjhar",
+      "score": 0.137,
+      "level": "Very Low",
+      "rank": 13
+    },
+    {
+      "name": "Kandhamal",
+      "score": 0.134,
+      "level": "Very Low",
+      "rank": 14
+    },
+    {
+      "name": "Angul",
+      "score": 0.134,
+      "level": "Very Low",
+      "rank": 15
+    }
+  ],
+  "weights": {
+    "flood": 0.3,
+    "hazard": 0.25,
+    "veg": 0.15,
+    "lulc": 0.1,
+    "pop": 0.2
+  }
+}

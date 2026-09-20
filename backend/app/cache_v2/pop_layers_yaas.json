@@ -1,0 +1,22 @@
+{
+  "layers": {
+    "popCount": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/eb41314562757497765d76efab1af409-1ee4e17dea4c5f8ddc05f0cacd233c64/tiles/{z}/{x}/{y}"
+    },
+    "popDensity": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/d775e5626ae77fc4b314c362c1c9a3b9-0cb648d7cd1b6960d64c0ed1c80d96d6/tiles/{z}/{x}/{y}"
+    },
+    "popVuln": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/9157964cb0d6b5da7f80c14a53d8d923-d36eeaaab2b1625b2f27ee73a16e9bb0/tiles/{z}/{x}/{y}"
+    },
+    "popFlooded": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/5e1df2f0671812a5f67ef08739c58352-2803cebe79149d2f7fe26ddaedea5c3b/tiles/{z}/{x}/{y}"
+    },
+    "popVegDmg": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/655d8c2e18e8ef2197f106740bde663a-a7512963742a52a6c74d0415cc9d0533/tiles/{z}/{x}/{y}"
+    },
+    "popHighHaz": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/42cd0abeb17b668fb9e3e1a447855aba-d0f97cd3bc7dd34e59d1f02d945ddbbd/tiles/{z}/{x}/{y}"
+    }
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "layers": {
+    "popDensity": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/8e9bf2002a831281fee7609f0549e31b-c0dadc97743d2d0c0f580da8002b5ce2/tiles/{z}/{x}/{y}"
+    },
+    "popCount": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/fd234e70991bf1a62b0fcd5e45966e0d-3319cd6076459bdd757a81df39d3bcf3/tiles/{z}/{x}/{y}"
+    }
+  }
+}

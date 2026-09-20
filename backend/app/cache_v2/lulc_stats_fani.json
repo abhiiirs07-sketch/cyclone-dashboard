@@ -1,0 +1,161 @@
+{
+  "summary": {
+    "total_area_km2": 91817.0,
+    "total_flooded_km2": 1801.4,
+    "total_damaged_km2": 499.4
+  },
+  "classes": [
+    {
+      "class_id": 40,
+      "name": "Cropland",
+      "color": "#F096FF",
+      "total_km2": 33756.0,
+      "flood_km2": 1073.3,
+      "veg_km2": 319.3,
+      "pct_flood": 3.2,
+      "pct_veg": 0.9
+    },
+    {
+      "class_id": 10,
+      "name": "Tree cover",
+      "color": "#006400",
+      "total_km2": 50283.8,
+      "flood_km2": 251.8,
+      "veg_km2": 113.2,
+      "pct_flood": 0.5,
+      "pct_veg": 0.2
+    },
+    {
+      "class_id": 80,
+      "name": "Permanent water",
+      "color": "#0064C8",
+      "total_km2": 2643.9,
+      "flood_km2": 244.4,
+      "veg_km2": 17.5,
+      "pct_flood": 9.2,
+      "pct_veg": 0.7
+    },
+    {
+      "class_id": 30,
+      "name": "Grassland",
+      "color": "#FFFF4C",
+      "total_km2": 3945.7,
+      "flood_km2": 132.9,
+      "veg_km2": 2.8,
+      "pct_flood": 3.4,
+      "pct_veg": 0.1
+    },
+    {
+      "class_id": 90,
+      "name": "Herbaceous wetland",
+      "color": "#0096A0",
+      "total_km2": 102.9,
+      "flood_km2": 59.9,
+      "veg_km2": 29.0,
+      "pct_flood": 58.2,
+      "pct_veg": 28.2
+    },
+    {
+      "class_id": 60,
+      "name": "Bare/sparse veg",
+      "color": "#B4B4B4",
+      "total_km2": 454.0,
+      "flood_km2": 23.3,
+      "veg_km2": 0.0,
+      "pct_flood": 5.1,
+      "pct_veg": 0.0
+    },
+    {
+      "class_id": 50,
+      "name": "Built-up",
+      "color": "#FA0000",
+      "total_km2": 417.6,
+      "flood_km2": 15.8,
+      "veg_km2": 0.0,
+      "pct_flood": 3.8,
+      "pct_veg": 0.0
+    },
+    {
+      "class_id": 95,
+      "name": "Mangroves",
+      "color": "#00CF75",
+      "total_km2": 197.8,
+      "flood_km2": 0.0,
+      "veg_km2": 15.7,
+      "pct_flood": 0.0,
+      "pct_veg": 7.9
+    },
+    {
+      "class_id": 20,
+      "name": "Shrubland",
+      "color": "#FFBB22",
+      "total_km2": 15.4,
+      "flood_km2": 0.0,
+      "veg_km2": 1.9,
+      "pct_flood": 0.0,
+      "pct_veg": 12.3
+    }
+  ],
+  "districts": [
+    {
+      "name": "Kalahandi",
+      "score": 0.84
+    },
+    {
+      "name": "Sambalpur",
+      "score": 0.829
+    },
+    {
+      "name": "Nayagarh",
+      "score": 0.825
+    },
+    {
+      "name": "Bolangir",
+      "score": 0.822
+    },
+    {
+      "name": "Kandhamal",
+      "score": 0.819
+    },
+    {
+      "name": "Mayurbhanj",
+      "score": 0.818
+    },
+    {
+      "name": "Vizianagaram",
+      "score": 0.816
+    },
+    {
+      "name": "Rayagada",
+      "score": 0.811
+    },
+    {
+      "name": "Ganjam",
+      "score": 0.811
+    },
+    {
+      "name": "Sundargarh",
+      "score": 0.81
+    },
+    {
+      "name": "Gajapati",
+      "score": 0.807
+    },
+    {
+      "name": "Khordha",
+      "score": 0.803
+    },
+    {
+      "name": "Pashchim Singhbhum",
+      "score": 0.803
+    },
+    {
+      "name": "Keonjhar",
+      "score": 0.801
+    },
+    {
+      "name": "Baleshwar",
+      "score": 0.8
+    }
+  ]
+}

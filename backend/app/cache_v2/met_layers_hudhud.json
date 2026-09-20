@@ -1,0 +1,25 @@
+{
+  "layers": {
+    "tempAnomaly": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/eb6aac034e8a52309586c2d86a9e5ba0-dc5263b202bf91c884eeb2aeeb29baad/tiles/{z}/{x}/{y}"
+    },
+    "peakWind": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/dc9b15ed3577d6921c04d1ec2594e7b8-25a32fdb1664934521162f2f6fd41a69/tiles/{z}/{x}/{y}"
+    },
+    "eventRainfall": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/f3c1dd7bad298fafc0317949b3a71837-40fb4b9fd265ad76eb0c5cc28bb154bc/tiles/{z}/{x}/{y}"
+    },
+    "humidity": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/71050db79f369b121ff3352414afdf91-0f7261dd104dd8ea475c7624e18c5934/tiles/{z}/{x}/{y}"
+    },
+    "rainSeverity": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/57b325bcd7515c0aed9e8b2be6fa9e70-1dd98d39fd5ef07c01d7b46e7a322c11/tiles/{z}/{x}/{y}"
+    },
+    "vHeavyRain": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/62cbca74ce832a2c4119413e0be20d2a-3ffb972ff71ff3787403501709a1c50b/tiles/{z}/{x}/{y}"
+    },
+    "heavyRain": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/b7bed60d4adaf733b874fbe85e4d6f6c-d9fb96c2e2323d597f1e97723a5d55d5/tiles/{z}/{x}/{y}"
+    }
+  }
+}

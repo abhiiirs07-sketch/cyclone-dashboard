@@ -1,0 +1,84 @@
+{
+  "flooded_area_km2": 832.0,
+  "crop_flooded_km2": 280.1,
+  "forest_flooded_km2": 21.2,
+  "urban_flooded_km2": 3.0,
+  "pop_exposed": 260289.0,
+  "districts": [
+    {
+      "name": "Puri",
+      "flood_km2": 377.0,
+      "severity": "High"
+    },
+    {
+      "name": "Cuttack",
+      "flood_km2": 173.5,
+      "severity": "Moderate"
+    },
+    {
+      "name": "Khordha",
+      "flood_km2": 69.7,
+      "severity": "Moderate"
+    },
+    {
+      "name": "Sonepur",
+      "flood_km2": 49.2,
+      "severity": "Low"
+    },
+    {
+      "name": "Dhenkanal",
+      "flood_km2": 36.8,
+      "severity": "Low"
+    },
+    {
+      "name": "Jajpur",
+      "flood_km2": 34.4,
+      "severity": "Low"
+    },
+    {
+      "name": "Angul",
+      "flood_km2": 22.8,
+      "severity": "Low"
+    },
+    {
+      "name": "Boudh",
+      "flood_km2": 19.9,
+      "severity": "Low"
+    },
+    {
+      "name": "Ganjam",
+      "flood_km2": 18.5,
+      "severity": "Low"
+    },
+    {
+      "name": "Nayagarh",
+      "flood_km2": 7.4,
+      "severity": "Low"
+    },
+    {
+      "name": "Sambalpur",
+      "flood_km2": 5.6,
+      "severity": "Low"
+    },
+    {
+      "name": "Srikakulam",
+      "flood_km2": 4.1,
+      "severity": "Low"
+    },
+    {
+      "name": "Jagatsinghpur",
+      "flood_km2": 3.9,
+      "severity": "Low"
+    },
+    {
+      "name": "Keonjhar",
+      "flood_km2": 1.7,
+      "severity": "Low"
+    },
+    {
+      "name": "Bhadrak",
+      "flood_km2": 1.0,
+      "severity": "Low"
+    }
+  ]
+}

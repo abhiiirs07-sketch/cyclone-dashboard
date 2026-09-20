@@ -1,0 +1,60 @@
+{
+  "stats": {
+    "districtCount": 17,
+    "districtNames": [
+      "Chittoor",
+      "Cuddapah",
+      "East Godavari",
+      "Guntur",
+      "Khammam",
+      "Krishna",
+      "Kurnool",
+      "Mahbubnagar",
+      "Nalgonda",
+      "Nellore",
+      "Prakasam",
+      "Rangareddi",
+      "Warangal",
+      "West Godavari",
+      "Malkangiri",
+      "Dantewada",
+      "Yanam"
+    ],
+    "reportingArea_km2": 209883.6779917786,
+    "stateNames": [
+      "Andhra Pradesh",
+      "Orissa",
+      "Chhattisgarh",
+      "Puducherry"
+    ],
+    "studyArea_km2": 126236.77232412928,
+    "cyclone": "Michaung",
+    "landfall": "Bapatla",
+    "landfallDate": "2023-12-05",
+    "landfallLon": 80.46,
+    "landfallLat": 15.9
+  },
+  "layers": {
+    "india": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/e25448a6ce9c43a3880953c9116e1997-98d188a2a0aa152cc078940b06f52006/tiles/{z}/{x}/{y}"
+    },
+    "landfall": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/821ad255e736ff39d936f720b190bff0-ee3a41e6c7cc89ac12cda3ad352021f4/tiles/{z}/{x}/{y}"
+    },
+    "affectedDistricts": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/2055ef4ab2ff99644998592e4280daf0-d4fc5f5a14879a7d05f5abcb3174f055/tiles/{z}/{x}/{y}"
+    },
+    "studyArea": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/dc7b929b09b1dde82f3ae64fad08ef47-e119dbd302939abac55c9abd6e521c0e/tiles/{z}/{x}/{y}"
+    },
+    "reportingArea": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/9d9c8043ead9e72d0ef225c2b9159a57-edaabde892b16933b7896cb4b41ef9da/tiles/{z}/{x}/{y}"
+    },
+    "states": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/ece8d134c05f0282d4247037aa763735-029e3681db4f1afedeb18c3946962e98/tiles/{z}/{x}/{y}"
+    },
+    "districts": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/7a6a843798507e8444dbc157f8582a2b-6b15fccaa38865feb6473153dd334b0c/tiles/{z}/{x}/{y}"
+    }
+  }
+}

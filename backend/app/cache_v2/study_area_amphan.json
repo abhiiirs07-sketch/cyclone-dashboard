@@ -1,0 +1,66 @@
+{
+  "stats": {
+    "districtCount": 24,
+    "districtNames": [
+      "Purba Singhbhum",
+      "Pashchim Singhbhum",
+      "Saraikela Kharsawan",
+      "West Midnapore",
+      "Bankura",
+      "Barddhaman",
+      "Birbhum",
+      "Haora",
+      "Hugli",
+      "Murshidabad",
+      "Nadia",
+      "Puruliya",
+      "Kolkata",
+      "North 24 Parganas",
+      "South 24 Parganas",
+      "Cuttack",
+      "Keonjhar",
+      "Mayurbhanj",
+      "Baleshwar",
+      "Bhadrak",
+      "Jagatsinghpur",
+      "Jajpur",
+      "Kendrapara",
+      "East Midnapore"
+    ],
+    "reportingArea_km2": 113560.69575465786,
+    "stateNames": [
+      "Jharkhand",
+      "West Bengal",
+      "Orissa"
+    ],
+    "studyArea_km2": 75782.66699489107,
+    "cyclone": "Amphan",
+    "landfall": "South 24 Parganas",
+    "landfallDate": "2020-05-20",
+    "landfallLon": 88.3,
+    "landfallLat": 21.65
+  },
+  "layers": {
+    "india": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/e25448a6ce9c43a3880953c9116e1997-1b2de29f8cca07bc9f1756dcbdfb9d63/tiles/{z}/{x}/{y}"
+    },
+    "landfall": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/90b921f1638469ccdc0fd4f48a107b85-e16f746bfd88ceda7079c1ce2a5c1d77/tiles/{z}/{x}/{y}"
+    },
+    "affectedDistricts": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/8709aefcd52e63a4f8b8b4286e6d16bb-9d72bf362c1e7c67cccb2f46438395b1/tiles/{z}/{x}/{y}"
+    },
+    "studyArea": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/58d7593ab95ed2c3a2e4a4e1887612b2-39190d45838405237cd98dcbcd8d9818/tiles/{z}/{x}/{y}"
+    },
+    "reportingArea": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/4945e0a0814a592b1fa244f6b8bb1056-73a39da092ca5b22435ff47a781821ff/tiles/{z}/{x}/{y}"
+    },
+    "states": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/ece8d134c05f0282d4247037aa763735-c3d9a0f187614eff469aec27af124e2a/tiles/{z}/{x}/{y}"
+    },
+    "districts": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/7a6a843798507e8444dbc157f8582a2b-dee062d48d5ecff0ac06e50b3fc20fff/tiles/{z}/{x}/{y}"
+    }
+  }
+}

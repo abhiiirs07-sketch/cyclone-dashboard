@@ -1,0 +1,10 @@
+{
+  "layers": {
+    "sarPre": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/3842f47de55e150572c4c0f215a06cea-afdff1f895808a44ca4b5d463b3bef05/tiles/{z}/{x}/{y}"
+    },
+    "sarPost": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/354d26de202d5ba159075d80e178d7f1-a9e65f9b537e76d51b6aaae0a8984383/tiles/{z}/{x}/{y}"
+    }
+  }
+}

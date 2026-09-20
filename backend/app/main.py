@@ -67,11 +67,14 @@ async def no_cache_gee(request: Request, call_next):
     return response
 
 
-# Local caching configuration (use /tmp on Vercel serverless read-only filesystem)
+# Bundled pre-computed cache directory
+BUNDLED_CACHE_DIR = Path(__file__).parent / "cache_v2"
+
+# Writable cache directory (use /tmp on Vercel serverless read-only filesystem)
 if os.environ.get("VERCEL") or os.environ.get("AWS_LAMBDA_FUNCTION_NAME"):
     CACHE_DIR = Path("/tmp/cache_v2")
 else:
-    CACHE_DIR = Path(__file__).parent / "cache_v2"
+    CACHE_DIR = BUNDLED_CACHE_DIR
 
 try:
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
@@ -87,7 +90,13 @@ _computing_lock = threading.Lock()
 
 
 def _cache_path(endpoint: str, cyclone_name: str) -> Path:
-    return CACHE_DIR / f"{endpoint}_{cyclone_name.lower()}.json"
+    filename = f"{endpoint}_{cyclone_name.lower()}.json"
+    path = CACHE_DIR / filename
+    if not path.exists() and BUNDLED_CACHE_DIR.exists():
+        bundled_path = BUNDLED_CACHE_DIR / filename
+        if bundled_path.exists():
+            return bundled_path
+    return path
 
 
 def get_cached_response(endpoint: str, cyclone_name: str, compute_func):

@@ -1,0 +1,105 @@
+{
+  "track": {
+    "category": "Cat 5",
+    "duration_hr": 204,
+    "end_time": "2019-05-04T06:00:00Z",
+    "max_wind_kt": 150,
+    "min_pres_hpa": 900,
+    "start_time": "2019-04-25T18:00:00Z",
+    "length_km": 2931.9
+  },
+  "corridors": {
+    "flood_250km_km2": 193981.8147667723,
+    "multihazard_100km_km2": 31040.04379456205,
+    "surge_50km_km2": 7760.116427545564
+  },
+  "districtRainfall": [
+    {
+      "name": "Bhadrak",
+      "mean": 124.5,
+      "max": 150.0
+    },
+    {
+      "name": "Jajpur",
+      "mean": 119.1,
+      "max": 139.1
+    },
+    {
+      "name": "Kendrapara",
+      "mean": 114.2,
+      "max": 139.1
+    },
+    {
+      "name": "Keonjhar",
+      "mean": 86.7,
+      "max": 137.5
+    },
+    {
+      "name": "Cuttack",
+      "mean": 94.0,
+      "max": 130.5
+    },
+    {
+      "name": "Dhenkanal",
+      "mean": 85.7,
+      "max": 121.5
+    },
+    {
+      "name": "Jagatsinghpur",
+      "mean": 106.7,
+      "max": 117.0
+    },
+    {
+      "name": "Puri",
+      "mean": 72.3,
+      "max": 111.2
+    },
+    {
+      "name": "Khordha",
+      "mean": 72.3,
+      "max": 111.2
+    },
+    {
+      "name": "Angul",
+      "mean": 40.5,
+      "max": 94.9
+    },
+    {
+      "name": "Nayagarh",
+      "mean": 43.7,
+      "max": 87.3
+    },
+    {
+      "name": "Ganjam",
+      "mean": 30.9,
+      "max": 51.0
+    },
+    {
+      "name": "Srikakulam",
+      "mean": 18.4,
+      "max": 35.0
+    },
+    {
+      "name": "Kandhamal",
+      "mean": 16.2,
+      "max": 30.9
+    },
+    {
+      "name": "Boudh",
+      "mean": 13.1,
+      "max": 26.1
+    }
+  ],
+  "stateRainfall": [
+    {
+      "name": "Andhra Pradesh",
+      "mean": 5.2,
+      "max": 35.0
+    },
+    {
+      "name": "Orissa",
+      "mean": 38.0,
+      "max": 150.0
+    }
+  ]
+}

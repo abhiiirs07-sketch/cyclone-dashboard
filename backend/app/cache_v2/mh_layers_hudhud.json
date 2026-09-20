@@ -1,0 +1,7 @@
+{
+  "layers": {
+    "popRisk": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/ee4125f13ec8ba8d5d0b30cfc849ca87-61addb4f6435d715e4973a0ed76e7de7/tiles/{z}/{x}/{y}"
+    }
+  }
+}

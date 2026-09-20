@@ -1,0 +1,19 @@
+{
+  "layers": {
+    "mhClass": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/11797ec7880c49e4f06c1e68d86e3f4c-692ef51874c726d7c214fa15de83e313/tiles/{z}/{x}/{y}"
+    },
+    "mhIndex": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/9365cd88bccf94dac883071d182e9d32-dbcf25af1a5775c4373ebbed649ae9c7/tiles/{z}/{x}/{y}"
+    },
+    "floodRisk": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/4988396f47b3404d4efbdfae16a33618-45186dd6d35fd67011c04875bcc1329a/tiles/{z}/{x}/{y}"
+    },
+    "vegRisk": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/d77f687c4421324f488822c5c0637516-e7b68edc25fe5c043bd648d428539eae/tiles/{z}/{x}/{y}"
+    },
+    "popRisk": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/8636c46e27ec511b2579222e099ed124-e8f903b1b53044330212ca79c24e103e/tiles/{z}/{x}/{y}"
+    }
+  }
+}

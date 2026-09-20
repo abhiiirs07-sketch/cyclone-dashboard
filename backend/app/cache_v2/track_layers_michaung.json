@@ -1,0 +1,409 @@
+{
+  "trackPoints": {
+    "type": "FeatureCollection",
+    "columns": {},
+    "version": 1717597862771420.0,
+    "id": "NOAA/IBTrACS/v4",
+    "properties": {
+      "system:asset_size": 49837600
+    },
+    "features": [
+      {
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            82.50000017201522,
+            11.499999321331655
+          ]
+        },
+        "id": "0001000000000002d5ab",
+        "properties": {
+          "ISO_TIME": "2023-12-03 00:00:00",
+          "USA_LAT": 11.5,
+          "USA_LON": 82.5,
+          "USA_PRES": 1001,
+          "USA_WIND": 35
+        }
+      },
+      {
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            82.62750370753746,
+            11.617501093191006
+          ]
+        },
+        "id": "0001000000000002d5ac",
+        "properties": {
+          "ISO_TIME": "2023-12-03 03:00:00",
+          "USA_LAT": 11.617500305175781,
+          "USA_LON": 82.62750244140625,
+          "USA_PRES": 1001,
+          "USA_WIND": 35
+        }
+      },
+      {
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            82.69999531336333,
+            11.799998722005386
+          ]
+        },
+        "id": "0001000000000002d5ad",
+        "properties": {
+          "ISO_TIME": "2023-12-03 06:00:00",
+          "USA_LAT": 11.800000190734863,
+          "USA_LON": 82.69999694824219,
+          "USA_PRES": 1002,
+          "USA_WIND": 35
+        }
+      },
+      {
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            82.66739482556159,
+            12.084899606512149
+          ]
+        },
+        "id": "0001000000000002d5ae",
+        "properties": {
+          "ISO_TIME": "2023-12-03 09:00:00",
+          "USA_LAT": 12.08489990234375,
+          "USA_LON": 82.66739654541016,
+          "USA_PRES": 1000,
+          "USA_WIND": 37
+        }
+      },
+      {
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            82.50000017201522,
+            12.399997523352848
+          ]
+        },
+        "id": "0001000000000002d5af",
+        "properties": {
+          "ISO_TIME": "2023-12-03 12:00:00",
+          "USA_LAT": 12.399999618530273,
+          "USA_LON": 82.5,
+          "USA_PRES": 999,
+          "USA_WIND": 39
+        }
+      },
+      {
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            82.18000170311679,
+            12.650099583238523
+          ]
+        },
+        "id": "0001000000000002d5b0",
+        "properties": {
+          "ISO_TIME": "2023-12-03 15:00:00",
+          "USA_LAT": 12.650099754333496,
+          "USA_LON": 82.18000030517578,
+          "USA_PRES": 997,
+          "USA_WIND": 42
+        }
+      },
+      {
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            81.80000157044319,
+            12.900000983576788
+          ]
+        },
+        "id": "0001000000000002d5b1",
+        "properties": {
+          "ISO_TIME": "2023-12-03 18:00:00",
+          "USA_LAT": 12.899999618530273,
+          "USA_LON": 81.80000305175781,
+          "USA_PRES": 996,
+          "USA_WIND": 45
+        }
+      },
+      {
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            81.45520158148548,
+            13.245001632081896
+          ]
+        },
+        "id": "0001000000000002d5b2",
+        "properties": {
+          "ISO_TIME": "2023-12-03 21:00:00",
+          "USA_LAT": 13.244999885559082,
+          "USA_LON": 81.4552001953125,
+          "USA_PRES": 993,
+          "USA_WIND": 49
+        }
+      },
+      {
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            81.19999830999467,
+            13.49999978492425
+          ]
+        },
+        "id": "0001000000000002d5b3",
+        "properties": {
+          "ISO_TIME": "2023-12-04 00:00:00",
+          "USA_LAT": 13.5,
+          "USA_LON": 81.19999694824219,
+          "USA_PRES": 990,
+          "USA_WIND": 54
+        }
+      },
+      {
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            81.12729712641928,
+            13.46490220053258
+          ]
+        },
+        "id": "0001000000000002d5b4",
+        "properties": {
+          "ISO_TIME": "2023-12-04 03:00:00",
+          "USA_LAT": 13.464900016784668,
+          "USA_LON": 81.1272964477539,
+          "USA_PRES": 990,
+          "USA_WIND": 54
+        }
+      },
+      {
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            81.09999850977009,
+            13.399999984699672
+          ]
+        },
+        "id": "0001000000000002d5b5",
+        "properties": {
+          "ISO_TIME": "2023-12-04 06:00:00",
+          "USA_LAT": 13.399999618530273,
+          "USA_LON": 81.0999984741211,
+          "USA_PRES": 991,
+          "USA_WIND": 54
+        }
+      },
+      {
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            80.99490195704142,
+            13.554900237094277
+          ]
+        },
+        "id": "0001000000000002d5b6",
+        "properties": {
+          "ISO_TIME": "2023-12-04 09:00:00",
+          "USA_LAT": 13.554900169372559,
+          "USA_LON": 80.99490356445312,
+          "USA_PRES": 989,
+          "USA_WIND": 57
+        }
+      },
+      {
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            80.80000356819741,
+            13.799999185597983
+          ]
+        },
+        "id": "0001000000000002d5b7",
+        "properties": {
+          "ISO_TIME": "2023-12-04 12:00:00",
+          "USA_LAT": 13.800000190734863,
+          "USA_LON": 80.80000305175781,
+          "USA_PRES": 987,
+          "USA_WIND": 60
+        }
+      },
+      {
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            80.427695384841,
+            14.050199345706833
+          ]
+        },
+        "id": "0001000000000002d5b8",
+        "properties": {
+          "ISO_TIME": "2023-12-04 15:00:00",
+          "USA_LAT": 14.050200462341309,
+          "USA_LON": 80.42769622802734,
+          "USA_PRES": 987,
+          "USA_WIND": 60
+        }
+      },
+      {
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            80.10000050752433,
+            14.29999818672087
+          ]
+        },
+        "id": "0001000000000002d5b9",
+        "properties": {
+          "ISO_TIME": "2023-12-04 18:00:00",
+          "USA_LAT": 14.300000190734863,
+          "USA_LON": 80.0999984741211,
+          "USA_PRES": 988,
+          "USA_WIND": 60
+        }
+      },
+      {
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            80.01979911597704,
+            14.512398547199654
+          ]
+        },
+        "id": "0001000000000002d5ba",
+        "properties": {
+          "ISO_TIME": "2023-12-04 21:00:00",
+          "USA_LAT": 14.512399673461914,
+          "USA_LON": 80.0197982788086,
+          "USA_PRES": 987,
+          "USA_WIND": 60
+        }
+      },
+      {
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [
+            80.10000050752433,
+            14.700001846720237
+          ]
+        },
+        "id": "0001000000000002d5bb",
+        "properties": {
+          "ISO_TIME": "2023-12-05 00:00:00",
+          "USA_LAT": 14.699999809265137,
+          "USA_LON": 80.0999984741211,
+          "USA_PRES": 987,
+          "USA_WIND": 60
+        }
+      }
+    ]
+  },
+  "trackLine": {
+    "type": "LineString",
+    "coordinates": [
+      [
+        82.50000017201522,
+        11.499999321331655
+      ],
+      [
+        82.62750370753746,
+        11.617501093191006
+      ],
+      [
+        82.69999531336333,
+        11.799998722005386
+      ],
+      [
+        82.66739482556159,
+        12.084899606512149
+      ],
+      [
+        82.50000017201522,
+        12.399997523352848
+      ],
+      [
+        82.18000170311679,
+        12.650099583238523
+      ],
+      [
+        81.80000157044319,
+        12.900000983576788
+      ],
+      [
+        81.45520158148548,
+        13.245001632081896
+      ],
+      [
+        81.19999830999467,
+        13.49999978492425
+      ],
+      [
+        81.12729712641928,
+        13.46490220053258
+      ],
+      [
+        81.09999850977009,
+        13.399999984699672
+      ],
+      [
+        80.99490195704142,
+        13.554900237094277
+      ],
+      [
+        80.80000356819741,
+        13.799999185597983
+      ],
+      [
+        80.427695384841,
+        14.050199345706833
+      ],
+      [
+        80.10000050752433,
+        14.29999818672087
+      ],
+      [
+        80.01979911597704,
+        14.512398547199654
+      ],
+      [
+        80.10000050752433,
+        14.700001846720237
+      ]
+    ]
+  },
+  "layers": {
+    "rainfallFootprint": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/a1067a6d6e1b49d9262098d21996a2fe-f2edb3928659d18b0c1cbebf29fa0f9b/tiles/{z}/{x}/{y}"
+    },
+    "corridor50km": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/929b65af5dd7a6dbe5f75c8d3796a399-826dc33fd0d1c9b289110fb544790e63/tiles/{z}/{x}/{y}"
+    },
+    "corridor250km": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/0d2c2db6aff669473599d0f40418b482-ba26b3de483399c8feaea8c0e6868715/tiles/{z}/{x}/{y}"
+    },
+    "cycloneTrack": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/fd1f879e295313a91d46910ea79150eb-8c47845225618c010229fc6dd09b4532/tiles/{z}/{x}/{y}"
+    },
+    "corridor100km": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/841cbf38ed891da2bb11df7e165c59c3-ce26400642bac54d14135e90078b11b2/tiles/{z}/{x}/{y}"
+    }
+  }
+}

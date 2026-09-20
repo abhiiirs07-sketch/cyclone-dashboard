@@ -1,0 +1,10 @@
+{
+  "layers": {
+    "lulcImpactScore": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/ac77d3c7dba190871739bd75debc32a3-2a3122e07ab0aef7e4fbee8cb2c7d83c/tiles/{z}/{x}/{y}"
+    },
+    "landCover": {
+      "tileUrl": "https://earthengine.googleapis.com/v1/projects/jarvice-ng/maps/36087d616831dadbf723c954d5688fc5-ce74867315e267752a39288e90272cbf/tiles/{z}/{x}/{y}"
+    }
+  }
+}

@@ -1,0 +1,71 @@
+{
+  "meta": {
+    "cyclone_name": "Fani",
+    "landfall_place": "Puri",
+    "landfall_date": "2019-05-03",
+    "category": "Cat 5",
+    "peak_wind_kmh": 278,
+    "generated_at": "2026-08-09T07:54:15.347395Z"
+  },
+  "rainfall": {
+    "mean_mm": 54.0,
+    "max_mm": 162.0
+  },
+  "flood": {
+    "flooded_area_km2": 1241.2
+  },
+  "hazard": {
+    "mean_index": 0.179,
+    "max_index": 0.697
+  },
+  "vegetation": {
+    "damaged_area_km2": 438.0
+  },
+  "population": {
+    "total": 4433973,
+    "flooded": 41751,
+    "pct_flooded": 0.9
+  },
+  "top_hazard_districts": [
+    {
+      "name": "Kendrapara",
+      "hazard_mean": 0.436
+    },
+    {
+      "name": "Jagatsinghpur",
+      "hazard_mean": 0.426
+    },
+    {
+      "name": "Bhadrak",
+      "hazard_mean": 0.4
+    },
+    {
+      "name": "Baleshwar",
+      "hazard_mean": 0.393
+    },
+    {
+      "name": "Puri",
+      "hazard_mean": 0.392
+    },
+    {
+      "name": "Jajpur",
+      "hazard_mean": 0.299
+    },
+    {
+      "name": "Khordha",
+      "hazard_mean": 0.284
+    },
+    {
+      "name": "Cuttack",
+      "hazard_mean": 0.273
+    },
+    {
+      "name": "Srikakulam",
+      "hazard_mean": 0.235
+    },
+    {
+      "name": "Ganjam",
+      "hazard_mean": 0.2
+    }
+  ]
+}
