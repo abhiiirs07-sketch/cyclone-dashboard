@@ -41,7 +41,7 @@ def ensure_initialized() -> None:
     key_data = os.environ.get("EE_PRIVATE_KEY_DATA")
     if key_data:
         key_data = key_data.strip()
-    project = os.environ.get("EE_PROJECT")
+    project = os.environ.get("EE_PROJECT", "jarvice-ng")
     if project:
         project = project.strip()
 
