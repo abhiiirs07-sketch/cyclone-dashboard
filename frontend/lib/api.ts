@@ -129,7 +129,10 @@ async function fetchLayerJSON<T>(path: string): Promise<T> {
 }
 
 
-const getCyclones = () => fetchJSON<CycloneInfo[]>('/api/cyclones');
+const getCyclones = async () => {
+  const res = await fetchJSON<{ cyclones: CycloneInfo[] } | CycloneInfo[]>('/api/cyclones');
+  return Array.isArray(res) ? res : (res.cyclones ?? []);
+};
 const getStudyArea = (cyclone: string) => fetchLayerJSON<StudyAreaResponse>(`/api/modules/1/study-area/${cyclone}`);
 const getMeteorologyLayers = (cyclone: string) =>
   fetchLayerJSON<MeteorologyLayersResponse>(`/api/modules/2/meteorology/${cyclone}/layers`);
