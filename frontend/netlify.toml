@@ -14,7 +14,7 @@
 # (same domain, no CORS issues, works on ANY network worldwide).
 [[redirects]]
   from   = "/api/*"
-  to     = "https://cyclone-dashboard-backend.onrender.com/api/:splat"
+  to     = "https://cyclone-backend.onrender.com/api/:splat"
   status = 200
   force  = true
   [redirects.headers]
