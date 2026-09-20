@@ -1,8 +1,14 @@
 import os
+import sys
 import json
 import time
 import threading
 from pathlib import Path
+
+# Fix sys.path for Vercel serverless environment
+backend_dir = Path(__file__).resolve().parent.parent
+if str(backend_dir) not in sys.path:
+    sys.path.insert(0, str(backend_dir))
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Request
