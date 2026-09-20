@@ -21,8 +21,9 @@ function makeRasterStyle(tiles: string[], attribution: string): maplibregl.Style
 const BASEMAP_STYLES: Record<BasemapId, maplibregl.StyleSpecification> = {
   dark: makeRasterStyle(
     [
-      'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png',
-      'https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png',
+      'https://basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}.png',
+      'https://a.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}.png',
+      'https://b.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}.png',
     ],
     '© OpenStreetMap © CARTO',
   ),
