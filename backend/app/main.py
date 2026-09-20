@@ -67,9 +67,16 @@ async def no_cache_gee(request: Request, call_next):
     return response
 
 
-# Local caching configuration
-CACHE_DIR = Path(__file__).parent / "cache_v2"
-CACHE_DIR.mkdir(parents=True, exist_ok=True)
+# Local caching configuration (use /tmp on Vercel serverless read-only filesystem)
+if os.environ.get("VERCEL") or os.environ.get("AWS_LAMBDA_FUNCTION_NAME"):
+    CACHE_DIR = Path("/tmp/cache_v2")
+else:
+    CACHE_DIR = Path(__file__).parent / "cache_v2"
+
+try:
+    CACHE_DIR.mkdir(parents=True, exist_ok=True)
+except Exception:
+    pass
 
 # Layer caches expire after 1.5 hours (GEE MapIDs typically expire in ~2 hours)
 LAYER_TTL = int(1.5 * 3600)
