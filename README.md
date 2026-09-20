@@ -1,3 +1,13 @@
+---
+title: Cyclone Dashboard Backend
+emoji: 🌀
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+app_port: 8000
+pinned: false
+---
+
 # Cyclone Intelligence & Impact Assessment Dashboard
 
 Google Earth Engine powered disaster monitoring system — a Next.js frontend
