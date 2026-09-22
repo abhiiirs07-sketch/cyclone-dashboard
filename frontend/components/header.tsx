@@ -96,7 +96,7 @@ export function Header({
         <User className="h-4 w-4" />
       </button>
 
-      <div className="flex items-center gap-1.5 text-[11px]" title={health.data?.detail ?? (isLoading ? 'Waking up Railway backend…' : 'Could not reach backend')}>
+      <div className="flex items-center gap-1.5 text-[11px]" title={health.data?.detail ?? (isLoading ? 'Connecting to Earth Engine backend…' : 'Could not reach backend')}>
         <span className={`h-2 w-2 rounded-full transition-colors duration-500 ${
           connected ? 'bg-emerald-400 shadow-[0_0_6px_#34d399]'
           : isLoading ? 'animate-pulse bg-amber-400'
