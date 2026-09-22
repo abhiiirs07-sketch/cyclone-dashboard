@@ -94,7 +94,18 @@ export function SidebarRight({
   reportLoading?: boolean;
   activeCyclone?: string | null;
 }) {
-  const modulesList = MODULES(!!meteorologyLayersReady, !!trackLayersReady, !!floodLayersReady, !!hazardLayersReady, !!vegLayersReady, !!lulcLayersReady, !!popLayersReady, !!mhLayersReady, !!valLayersReady, !!reportSummary);
+  const modulesList = MODULES(
+    !!studyArea || !!meteorologyLayersReady || !!meteorologyStats,
+    !!studyArea || !!trackLayersReady || !!trackStats,
+    !!studyArea || !!floodLayersReady || !!floodStats,
+    !!studyArea || !!hazardLayersReady || !!hazardStats,
+    !!studyArea || !!vegLayersReady || !!vegStats,
+    !!studyArea || !!lulcLayersReady || !!lulcStats,
+    !!studyArea || !!popLayersReady || !!popStats,
+    !!studyArea || !!mhLayersReady || !!mhStats,
+    !!studyArea || !!valLayersReady || !!valStats,
+    !!studyArea || !!reportSummary
+  );
 
   const syncReport = reportSummary ? {
     meta: {
